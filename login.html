@@ -41,37 +41,42 @@
 </div>
 
 <script>
-    let esRegistro = false;
+   async function procesarAuth(e) {
+    e.preventDefault(); // Evita que la página se recargue
 
-    function toggleForm() {
-        esRegistro = !esRegistro;
-        document.getElementById('form-title').innerText = esRegistro ? "CREAR CUENTA" : "INICIAR SESIÓN";
-        document.getElementById('nombre').style.display = esRegistro ? "block" : "none";
-        document.getElementById('toggle-text').innerText = esRegistro ? "¿Ya tienes cuenta? Loguéate" : "¿No tienes cuenta? Regístrate aquí";
-    }
+    // Obtener los datos del formulario
+    const nombre = document.getElementById('nombre')?.value; // Solo si es registro
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
 
-    function procesarAuth() {
-        const payload = {
-            email: document.getElementById('email').value,
-            password: document.getElementById('password').value,
-            nombre: esRegistro ? document.getElementById('nombre').value : null
-        };
+    const datos = { nombre, email, password };
 
-        fetch('http://127.0.0.1:5000/auth', {
+    try {
+        // CAMBIO VITAL: Usar la URL de Render en lugar de 127.0.0.1
+        const url = 'https://arcade-3qfs.onrender.com/auth';
+        
+        const respuesta = await fetch(url, {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(payload)
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.nombre) {
-                localStorage.setItem('usuarioNombre', data.nombre);
-                window.location.href = 'index.html';
-            } else {
-                alert(data.message);
-            }
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(datos)
         });
+
+        const resultado = await respuesta.json();
+
+        if (respuesta.ok) {
+            alert(`¡Bienvenido ${resultado.nombre}!`);
+            // Redirigir a la página principal del arcade
+            window.location.href = 'index.html';
+        } else {
+            alert('Error: ' + resultado.message);
+        }
+    } catch (error) {
+        console.error('Error de conexión:', error);
+        alert('No se pudo conectar con el servidor. Verifica que Render esté encendido.');
     }
+}
 </script>
 </body>
 </html>
