@@ -1,15 +1,19 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import sqlite3
 import os
-import shutil
 
 app = Flask(__name__)
 CORS(app)
 
-# Configuración de rutas relativas al archivo
+# --- CONFIGURACIÓN DE RUTAS ---
+# Obtenemos la ruta de la carpeta donde está este archivo
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE_PATH, 'base_datos = "arcadelocal/usuarios_arcade.db"')
+
+# Ruta a la base de datos dentro de arcadelocal
+# Asegúrate de que el nombre del archivo sea exactamente 'usuarios_arcade.db' 
+# o cámbialo aquí abajo si tiene otro nombre.
+DB_PATH = os.path.join(BASE_PATH, 'arcadelocal', 'usuarios_arcade.db')
 
 def init_db():
     conn = sqlite3.connect(DB_PATH)
@@ -25,19 +29,33 @@ def init_db():
     conn.commit()
     conn.close()
 
+# Inicializar base de datos al arrancar
 init_db()
 
+# --- RUTAS DE LA PÁGINA ---
+
+# Esta ruta es VITAL para que no te salga el error "Not Found" al entrar al link
+@app.route('/')
+def index():
+    return send_from_directory('.', 'index.html')
+
+# Por si tus archivos CSS/JS necesitan cargarse manualmente
+@app.route('/<path:path>')
+def send_static(path):
+    return send_from_directory('.', path)
+
+# --- RUTA DE AUTENTICACIÓN / REGISTRO ---
 @app.route('/auth', methods=['POST'])
 def auth():
     datos = request.json
     email = datos.get('email')
     password = datos.get('password')
     nombre = datos.get('nombre')
-    
+
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    
-    if nombre: # Lógica de Registro
+
+    if nombre:  # Lógica de Registro
         try:
             cursor.execute('INSERT INTO usuarios (nombre, email, password) VALUES (?, ?, ?)', 
                            (nombre, email, password))
@@ -47,51 +65,18 @@ def auth():
             return jsonify({"status": "error", "message": "El correo ya está registrado"}), 400
         finally:
             conn.close()
-
-    # Lógica de Login
-    cursor.execute('SELECT nombre FROM usuarios WHERE email = ? AND password = ?', (email, password))
-    user = cursor.fetchone()
-    conn.close()
-    
-    if user:
-        return jsonify({"status": "login", "nombre": user[0]}), 200
-    return jsonify({"status": "error", "message": "Datos incorrectos"}), 404
-
-@app.route('/instalar', methods=['POST'])
-def instalar():
-    datos = request.json
-    juego_url = datos.get('juego')
-    consola = datos.get('consola')
-
-    # Mapeo de carpetas personalizadas
-    if consola == 'gamecube':
-        folder = 'cube'
-    elif consola == 'n64':
-        folder = '64'
-    else:
-        folder = consola
-
-    nombre_archivo = juego_url.split('/')[-1]
-    
-    # Rutas de carpetas
-    bodega = os.path.join(BASE_PATH, 'archivos_locales')
-    destino_dir = os.path.join(BASE_PATH, 'roms', folder)
-    
-    if not os.path.exists(destino_dir):
-        os.makedirs(destino_dir)
-    
-    origen = os.path.join(bodega, nombre_archivo)
-    destino_final = os.path.join(destino_dir, nombre_archivo)
-
-    if os.path.exists(origen):
-        try:
-            shutil.copy(origen, destino_final)
-            return jsonify({"status": "success", "message": f"Instalado en roms/{folder}"}), 200
-        except Exception as e:
-            return jsonify({"status": "error", "message": str(e)}), 500
-            
-    return jsonify({"status": "error", "message": f"No se encontró {nombre_archivo} en archivos_locales"}), 404
+    else:  # Lógica de Login
+        cursor.execute('SELECT nombre FROM usuarios WHERE email = ? AND password = ?', 
+                       (email, password))
+        usuario = cursor.fetchone()
+        conn.close()
+        
+        if usuario:
+            return jsonify({"status": "login", "nombre": usuario[0]}), 200
+        else:
+            return jsonify({"status": "error", "message": "Credenciales incorrectas"}), 401
 
 if __name__ == '__main__':
-    # Puerto 5000 para Flask
-    app.run(port=5000, debug=True)
+    # Usar el puerto que asigne Render o el 5000 por defecto
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
