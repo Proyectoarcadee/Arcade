@@ -9,7 +9,7 @@ CORS(app)
 
 # Configuración de rutas relativas al archivo
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE_PATH, 'usuarios_arcade.db')
+DB_PATH = os.path.join(BASE_PATH, 'base_datos = "arcadelocal/nombre_de_tu_base.db"')
 
 def init_db():
     conn = sqlite3.connect(DB_PATH)
