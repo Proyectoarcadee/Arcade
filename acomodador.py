@@ -4,10 +4,11 @@ import sqlite3
 import os
 
 app = Flask(__name__)
-CORS(app) # Esto es vital para que el frontend pueda conectarse
+CORS(app) # Permite que el frontend se conecte sin errores de seguridad
 
-# Configuramos las rutas para que funcionen en la nube
+# Configuración de rutas para Render
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
+# Tu base de datos se queda segura en su carpeta original
 DB_PATH = os.path.join(BASE_PATH, 'arcadelocal', 'usuarios_arcade.db')
 
 def init_db():
@@ -26,16 +27,17 @@ def init_db():
 
 init_db()
 
-# --- RUTAS PARA MOSTRAR TU PÁGINA ---
+# --- RUTAS PARA MOSTRAR TU PÁGINA (Frontend) ---
 @app.route('/')
 def index():
     return send_from_directory(BASE_PATH, 'index.html')
 
 @app.route('/<path:path>')
 def static_proxy(path):
+    # Sirve login.html, datos.js, imágenes, etc.
     return send_from_directory(BASE_PATH, path)
 
-# --- RUTA DE LOGIN/REGISTRO ---
+# --- RUTA DE DATOS (Backend / API) ---
 @app.route('/auth', methods=['POST'])
 def auth():
     datos = request.json
@@ -46,7 +48,7 @@ def auth():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
-    if nombre:  # REGISTRO
+    if nombre:  # Lógica de Registro
         try:
             cursor.execute('INSERT INTO usuarios (nombre, email, password) VALUES (?, ?, ?)', 
                            (nombre, email, password))
@@ -56,7 +58,7 @@ def auth():
             return jsonify({"status": "error", "message": "Email ya registrado"}), 400
         finally:
             conn.close()
-    else:  # LOGIN
+    else:  # Lógica de Login
         cursor.execute('SELECT nombre FROM usuarios WHERE email = ? AND password = ?', 
                        (email, password))
         usuario = cursor.fetchone()
@@ -65,7 +67,7 @@ def auth():
         if usuario:
             return jsonify({"status": "login", "nombre": usuario[0]}), 200
         else:
-            return jsonify({"status": "error", "message": "Datos incorrectos"}), 401
+            return jsonify({"status": "error", "message": "Credenciales incorrectas"}), 401
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
