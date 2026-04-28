@@ -7,13 +7,9 @@ app = Flask(__name__)
 CORS(app)
 
 # --- CONFIGURACIÓN DE RUTAS ---
-# Obtenemos la ruta de la carpeta donde está este archivo
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
-
-# Ruta a la base de datos dentro de arcadelocal
-# Asegúrate de que el nombre del archivo sea exactamente 'usuarios_arcade.db' 
-# o cámbialo aquí abajo si tiene otro nombre.
-DB_PATH = os.path.join(BASE_PATH, 'arcadelocal', 'usuarios_arcade.db')
+# Aquí mantenemos la carpeta arcadelocal para tu base de datos
+DB_PATH = os.path.join(BASE_PATH, 'arcadelocal', 'arcadelocal/usuarios_arcade.db')
 
 def init_db():
     conn = sqlite3.connect(DB_PATH)
@@ -29,22 +25,21 @@ def init_db():
     conn.commit()
     conn.close()
 
-# Inicializar base de datos al arrancar
 init_db()
 
-# --- RUTAS DE LA PÁGINA ---
+# --- RUTAS PARA SERVIR TU FRONTEND (ESTO QUITA EL NOT FOUND) ---
 
-# Esta ruta es VITAL para que no te salga el error "Not Found" al entrar al link
 @app.route('/')
 def index():
-    return send_from_directory('.', 'index.html')
+    # Busca el index.html en la raíz del proyecto
+    return send_from_directory(BASE_PATH, 'index.html')
 
-# Por si tus archivos CSS/JS necesitan cargarse manualmente
 @app.route('/<path:path>')
-def send_static(path):
-    return send_from_directory('.', path)
+def static_proxy(path):
+    # Esto sirve tus archivos .js, .css e imágenes automáticamente
+    return send_from_directory(BASE_PATH, path)
 
-# --- RUTA DE AUTENTICACIÓN / REGISTRO ---
+# --- RUTA DE AUTH ---
 @app.route('/auth', methods=['POST'])
 def auth():
     datos = request.json
@@ -55,7 +50,7 @@ def auth():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
-    if nombre:  # Lógica de Registro
+    if nombre:  # Registro
         try:
             cursor.execute('INSERT INTO usuarios (nombre, email, password) VALUES (?, ?, ?)', 
                            (nombre, email, password))
@@ -65,7 +60,7 @@ def auth():
             return jsonify({"status": "error", "message": "El correo ya está registrado"}), 400
         finally:
             conn.close()
-    else:  # Lógica de Login
+    else:  # Login
         cursor.execute('SELECT nombre FROM usuarios WHERE email = ? AND password = ?', 
                        (email, password))
         usuario = cursor.fetchone()
@@ -77,6 +72,5 @@ def auth():
             return jsonify({"status": "error", "message": "Credenciales incorrectas"}), 401
 
 if __name__ == '__main__':
-    # Usar el puerto que asigne Render o el 5000 por defecto
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
