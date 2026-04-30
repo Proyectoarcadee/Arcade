@@ -37,20 +37,21 @@
             ? "http://127.0.0.1:5000"
             : "https://arcade-3qfs.onrender.com"; // Asegúrate de que esta sea tu URL de Render
 
-        window.onload = () => {
-            // CORRECCIÓN: Usamos 'usuario' que es lo que guarda tu login
-            const user = localStorage.getItem('usuario'); 
-            
-            if (!user) {
-                window.location.href = 'login.html';
-            } else {
-                document.getElementById('user-name').innerText = user.toUpperCase();
-                // Verificamos que listaDeJuegos (de datos.js) exista
-                if (typeof listaDeJuegos !== 'undefined') {
-                    render(listaDeJuegos);
-                }
-            }
-        };
+    window.onload = () => {
+    // BUSCAR: Ahora usamos la misma palabra 'usuario'
+    const user = localStorage.getItem('usuario'); 
+    
+    if (!user) {
+        // Si no existe, te manda al login (esto es lo que te está pasando)
+        window.location.href = 'login.html';
+    } else {
+        // Si existe, lo muestra en pantalla
+        document.getElementById('user-name').innerText = user.toUpperCase();
+        if (typeof listaDeJuegos !== 'undefined') {
+            render(listaDeJuegos);
+        }
+    }
+};
 
         function render(lista) {
             const container = document.getElementById('grid');

@@ -59,14 +59,13 @@ async function procesarAuth() {
 
         const resultado = await respuesta.json();
         
-        if (respuesta.ok) {
-            // ¡ESTO ES LO QUE FALTA! Guardamos la sesión
-            localStorage.setItem('usuario', resultado.nombre);
-            alert("¡Bienvenido " + resultado.nombre + "!");
-            
-            // Redirección limpia
-            window.location.href = "index.html"; 
-        } else {
+       // ... dentro de procesarAuth(), cuando respuesta.ok es true:
+    if (respuesta.ok) {
+    // GUARDAR: Usamos la palabra 'usuario'
+    localStorage.setItem('usuario', resultado.nombre); 
+    alert("¡Bienvenido " + resultado.nombre + "!");
+    window.location.href = "index.html"; 
+    } else {
             alert("Error: " + resultado.message);
         }
     } catch (error) {
