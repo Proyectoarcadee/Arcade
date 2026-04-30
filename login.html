@@ -30,71 +30,64 @@
     </style>
 </head>
 <body>
+    <div class="auth-card">
+        <h2 id="form-title">INICIAR SESIÓN</h2>
+        <input type="text" id="nombre" placeholder="Tu Nombre (Solo para registro)" style="display: none;">
+        <input type="email" id="email" placeholder="Correo Electrónico">
+        <input type="password" id="password" placeholder="Contraseña">
+        <button class="btn-main" onclick="procesarAuth()">INGRESAR</button>
+        <span class="toggle-link" onclick="toggleForm()" id="toggle-text">¿No tienes cuenta? Regístrate aquí</span>
+    </div>
 
-<div class="auth-card">
-    <h2 id="form-title">INICIAR SESIÓN</h2>
-    <!-- El campo de nombre inicia oculto -->
-    <input type="text" id="nombre" placeholder="Tu Nombre (Solo para registro)" style="display: none;">
-    <input type="email" id="email" placeholder="Correo Electrónico">
-    <input type="password" id="password" placeholder="Contraseña">
-    <button class="btn-main" onclick="procesarAuth()">INGRESAR</button>
-    <span class="toggle-link" onclick="toggleForm()" id="toggle-text">¿No tienes cuenta? Regístrate aquí</span>
-</div>
+    <script>
+        function toggleForm() {
+            const nombreInput = document.getElementById('nombre');
+            const title = document.getElementById('form-title');
+            const btn = document.querySelector('.btn-main');
+            const toggle = document.getElementById('toggle-text');
 
-<script>
-    // Función para cambiar entre Login y Registro
-    function toggleForm() {
-        const nombreInput = document.getElementById('nombre');
-        const title = document.getElementById('form-title');
-        const btn = document.querySelector('.btn-main');
-        const toggle = document.getElementById('toggle-text');
-
-        if (nombreInput.style.display === 'none') {
-            nombreInput.style.display = 'block';
-            title.innerText = 'REGISTRARSE';
-            btn.innerText = 'CREAR CUENTA';
-            toggle.innerText = '¿Ya tienes cuenta? Inicia sesión aquí';
-        } else {
-            nombreInput.style.display = 'none';
-            title.innerText = 'INICIAR SESIÓN';
-            btn.innerText = 'INGRESAR';
-            toggle.innerText = '¿No tienes cuenta? Regístrate aquí';
-        }
-    }
-
-    async function procesarAuth() {
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        const nombreInput = document.getElementById('nombre');
-        
-        // Si el input de nombre está oculto, es Login; si no, es Registro
-        const nombre = nombreInput.style.display === 'none' ? null : nombreInput.value;
-
-        const datos = { nombre, email, password };
-        const url = 'https://arcade-3qfs.onrender.com/auth'; 
-        
-        try {
-            const respuesta = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(datos)
-            });
-
-            const resultado = await respuesta.json();
-            
-            if (respuesta.ok) {
-                // Guardamos el nombre para que el index lo reconozca
-                localStorage.setItem('usuario', resultado.nombre);
-                alert("¡Éxito! Bienvenido " + resultado.nombre);
-                window.location.href = "index.html"; 
+            if (nombreInput.style.display === 'none') {
+                nombreInput.style.display = 'block';
+                title.innerText = 'REGISTRARSE';
+                btn.innerText = 'CREAR CUENTA';
+                toggle.innerText = '¿Ya tienes cuenta? Inicia sesión aquí';
             } else {
-                alert("Error: " + resultado.message);
+                nombreInput.style.display = 'none';
+                title.innerText = 'INICIAR SESIÓN';
+                btn.innerText = 'INGRESAR';
+                toggle.innerText = '¿No tienes cuenta? Regístrate aquí';
             }
-        } catch (error) {
-            console.error("Error:", error);
-            alert("El servidor de Render está despertando. Reintenta en unos segundos.");
         }
-    }
-</script>
+
+        async function procesarAuth() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const nombreInput = document.getElementById('nombre');
+            const nombre = nombreInput.style.display === 'none' ? null : nombreInput.value;
+
+            const datos = { nombre, email, password };
+            const url = 'https://arcade-3qfs.onrender.com/auth'; 
+            
+            try {
+                const respuesta = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(datos)
+                });
+
+                const resultado = await respuesta.json();
+                
+                if (respuesta.ok) {
+                    localStorage.setItem('usuario', resultado.nombre); // Sincronizado con index
+                    alert("¡Éxito! Bienvenido " + resultado.nombre);
+                    window.location.href = "index.html"; 
+                } else {
+                    alert("Error: " + resultado.message);
+                }
+            } catch (error) {
+                alert("Servidor cargando, intenta en 5 segundos.");
+            }
+        }
+    </script>
 </body>
 </html>

@@ -7,43 +7,22 @@
     <style>
         :root { --neon: #00ffcc; --bg: #0d0d0d; }
         body { background: var(--bg); color: white; font-family: sans-serif; margin: 0; }
-        header { 
-            padding: 20px; 
-            background: #1a1a1a; 
-            border-bottom: 2px solid var(--neon); 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-        }
+        header { padding: 20px; background: #1a1a1a; border-bottom: 2px solid var(--neon); display: flex; justify-content: space-between; align-items: center; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; padding: 20px; }
         .card { background: #1a1a1a; border: 1px solid #333; border-radius: 10px; overflow: hidden; text-align: center; }
         .card img { width: 100%; height: 250px; object-fit: cover; }
         .btn-instalar { background: var(--neon); border: none; padding: 10px; width: 100%; font-weight: bold; cursor: pointer; }
-        
-        /* Estilo para el botón de cerrar sesión */
-        .btn-logout { 
-            background: transparent; 
-            color: #ff4444; 
-            border: 1px solid #ff4444; 
-            padding: 8px 15px; 
-            cursor: pointer; 
-            border-radius: 5px; 
-            font-weight: bold;
-            margin-left: 15px;
-            transition: 0.3s;
-        }
+        .btn-logout { background: transparent; color: #ff4444; border: 1px solid #ff4444; padding: 8px 15px; cursor: pointer; border-radius: 5px; font-weight: bold; transition: 0.3s; }
         .btn-logout:hover { background: #ff4444; color: white; }
-
         .filtros { text-align: center; padding: 15px; }
         .btn-f { background: transparent; color: var(--neon); border: 1px solid var(--neon); padding: 8px 15px; cursor: pointer; margin: 5px; }
-        .user-info { display: flex; align-items: center; }
     </style>
 </head>
 <body>
     <header>
         <h2 style="color: var(--neon)">ARCADE UTN</h2>
-        <div class="user-info">
-            USUARIO: <span id="user-name" style="margin-right: 10px;"></span>
+        <div>
+            USUARIO: <span id="user-name" style="margin-right: 15px;"></span>
             <button class="btn-logout" onclick="cerrarSesion()">CERRAR SESIÓN</button>
         </div>
     </header>
@@ -58,28 +37,20 @@
     <div class="grid" id="grid"></div>
 
     <script>
-        const API_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
-            ? "http://127.0.0.1:5000"
-            : "https://arcade-3qfs.onrender.com";
+        const API_URL = "https://arcade-3qfs.onrender.com";
 
         window.onload = () => {
-            const user = localStorage.getItem('usuario'); 
-            
+            const user = localStorage.getItem('usuario'); // Busca la llave correcta
             if (!user) {
                 window.location.href = 'login.html';
             } else {
                 document.getElementById('user-name').innerText = user.toUpperCase();
-                if (typeof listaDeJuegos !== 'undefined') {
-                    render(listaDeJuegos);
-                }
+                if (typeof listaDeJuegos !== 'undefined') render(listaDeJuegos);
             }
         };
 
-        // FUNCIÓN PARA CERRAR SESIÓN
         function cerrarSesion() {
-            // Borramos el dato del navegador
             localStorage.removeItem('usuario');
-            // Enviamos al usuario de vuelta al login
             window.location.href = 'login.html';
         }
 
@@ -108,7 +79,7 @@
                 body: JSON.stringify({ juego: url, consola: consola })
             })
             .then(res => res.json())
-            .then(data => alert(data.message || "Acción procesada"))
+            .then(data => alert(data.message))
             .catch(() => alert("Error al conectar con el servidor"));
         }
     </script>
