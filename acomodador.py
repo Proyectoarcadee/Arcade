@@ -4,40 +4,22 @@ import sqlite3
 import os
 
 app = Flask(__name__)
-CORS(app) # Permite que el frontend se conecte sin errores de seguridad
+CORS(app)
 
-# Configuración de rutas para Render
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
-# Tu base de datos se queda segura en su carpeta original
+# Ruta a tu carpeta arcadelocal
 DB_PATH = os.path.join(BASE_PATH, 'arcadelocal', 'usuarios_arcade.db')
 
-def init_db():
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS usuarios (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nombre TEXT NOT NULL,
-            email TEXT NOT NULL UNIQUE,
-            password TEXT NOT NULL
-        )
-    ''')
-    conn.commit()
-    conn.close()
-
-init_db()
-
-# --- RUTAS PARA MOSTRAR TU PÁGINA (Frontend) ---
+# --- RUTAS PARA EL FRONTEND ---
 @app.route('/')
-def index():
+def home():
     return send_from_directory(BASE_PATH, 'index.html')
 
 @app.route('/<path:path>')
-def static_proxy(path):
-    # Sirve login.html, datos.js, imágenes, etc.
+def serve_static(path):
     return send_from_directory(BASE_PATH, path)
 
-# --- RUTA DE DATOS (Backend / API) ---
+# --- RUTA PARA EL LOGIN/REGISTRO ---
 @app.route('/auth', methods=['POST'])
 def auth():
     datos = request.json
@@ -48,26 +30,23 @@ def auth():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
-    if nombre:  # Lógica de Registro
+    if nombre:  # REGISTRO
         try:
             cursor.execute('INSERT INTO usuarios (nombre, email, password) VALUES (?, ?, ?)', 
                            (nombre, email, password))
             conn.commit()
-            return jsonify({"status": "registro", "nombre": nombre}), 201
-        except sqlite3.IntegrityError:
-            return jsonify({"status": "error", "message": "Email ya registrado"}), 400
+            return jsonify({"status": "ok", "nombre": nombre}), 201
+        except:
+            return jsonify({"status": "error", "message": "Email ya existe"}), 400
         finally:
             conn.close()
-    else:  # Lógica de Login
-        cursor.execute('SELECT nombre FROM usuarios WHERE email = ? AND password = ?', 
-                       (email, password))
-        usuario = cursor.fetchone()
+    else:  # LOGIN
+        cursor.execute('SELECT nombre FROM usuarios WHERE email=? AND password=?', (email, password))
+        user = cursor.fetchone()
         conn.close()
-        
-        if usuario:
-            return jsonify({"status": "login", "nombre": usuario[0]}), 200
-        else:
-            return jsonify({"status": "error", "message": "Credenciales incorrectas"}), 401
+        if user:
+            return jsonify({"status": "ok", "nombre": user[0]}), 200
+        return jsonify({"status": "error", "message": "Datos incorrectos"}), 401
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

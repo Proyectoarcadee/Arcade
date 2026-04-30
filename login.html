@@ -41,57 +41,37 @@
 </div>
 
 <script>
-    function toggleForm() {
-        const nombreInput = document.getElementById('nombre');
-        const title = document.getElementById('form-title');
-        const btn = document.querySelector('.btn-main');
-        const toggle = document.getElementById('toggle-text');
+async function procesarAuth() {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const nombreInput = document.getElementById('nombre');
+    const nombre = nombreInput.style.display === 'none' ? null : nombreInput.value;
 
-        if (nombreInput.style.display === 'none') {
-            nombreInput.style.display = 'block';
-            title.innerText = 'REGISTRARSE';
-            btn.innerText = 'CREAR CUENTA';
-            toggle.innerText = '¿Ya tienes cuenta? Inicia sesión aquí';
-        } else {
-            nombreInput.style.display = 'none';
-            title.innerText = 'INICIAR SESIÓN';
-            btn.innerText = 'INGRESAR';
-            toggle.innerText = '¿No tienes cuenta? Regístrate aquí';
-        }
-    }
+    const datos = { nombre, email, password };
 
-    async function procesarAuth() {
-        // Recolectar datos
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        const nombreInput = document.getElementById('nombre');
-        const nombre = nombreInput.style.display === 'none' ? null : nombreInput.value;
+    // IMPORTANTE: Agregar /auth al final de tu link de Render
+    const url = 'https://arcade-3qfs.onrender.com/auth'; 
+    
+    try {
+        const respuesta = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(datos)
+        });
 
-        const datos = { nombre, email, password };
-
-        // URL de tu API en Render
-        const url = 'https://arcade-3qfs.onrender.com/auth'; 
+        const resultado = await respuesta.json();
         
-        try {
-            const respuesta = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(datos)
-            });
-
-            const resultado = await respuesta.json();
-            
-            if (respuesta.ok) {
-                alert("¡Éxito! Bienvenido " + (resultado.nombre || ""));
-                window.location.href = "index.html";
-            } else {
-                alert("Error: " + resultado.message);
-            }
-        } catch (error) {
-            console.error("Error conectando:", error);
-            alert("El servidor de Render está iniciando. Intenta de nuevo en unos segundos.");
+        if (respuesta.ok) {
+            alert("¡Bienvenido " + (resultado.nombre || "") + "!");
+            window.location.href = "index.html";
+        } else {
+            alert("Error: " + resultado.message);
         }
+    } catch (error) {
+        console.error("Error detallado:", error);
+        alert("Parece que el servidor aún está cargando. Espera 10 segundos y reintenta.");
     }
+}
 </script>
 </body>
 </html>
