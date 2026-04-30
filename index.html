@@ -3,7 +3,7 @@
 <head>
     <script src="datos.js"></script>
     <meta charset="UTF-8">
-    <title>Aio Arcade - Dashboard</title>
+    <title>Arcade - Dashboard</title>
     <style>
         :root { --neon: #00ffcc; --bg: #0d0d0d; }
         body { background: var(--bg); color: white; font-family: sans-serif; margin: 0; }
@@ -18,7 +18,7 @@
 </head>
 <body>
     <header>
-        <h2 style="color: var(--neon)">ARCADE UTN</h2>
+        <h2 style="color: var(--neon)">ARCADE</h2>
         <div>USUARIO: <span id="user-name"></span></div>
     </header>
 
@@ -32,15 +32,24 @@
     <div class="grid" id="grid"></div>
 
     <script>
+        // Configuramos la URL para que funcione tanto en tu PC como en Render
         const API_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
             ? "http://127.0.0.1:5000"
-            : "";
+            : "https://arcade-3qfs.onrender.com"; // Asegúrate de que esta sea tu URL de Render
 
         window.onload = () => {
-            const user = localStorage.getItem('usuarioNombre');
-            if (!user) window.location.href = 'login.html';
-            document.getElementById('user-name').innerText = user.toUpperCase();
-            render(listaDeJuegos);
+            // CORRECCIÓN: Usamos 'usuario' que es lo que guarda tu login
+            const user = localStorage.getItem('usuario'); 
+            
+            if (!user) {
+                window.location.href = 'login.html';
+            } else {
+                document.getElementById('user-name').innerText = user.toUpperCase();
+                // Verificamos que listaDeJuegos (de datos.js) exista
+                if (typeof listaDeJuegos !== 'undefined') {
+                    render(listaDeJuegos);
+                }
+            }
         };
 
         function render(lista) {
@@ -62,14 +71,15 @@
         }
 
         function instalar(url, consola) {
+            // Mandamos la petición al endpoint /auth o al que definas para instalar
             fetch(`${API_URL}/instalar`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ juego: url, consola: consola })
             })
             .then(res => res.json())
-            .then(data => alert(data.message))
-            .catch(() => alert("Error: El servidor Python no responde"));
+            .then(data => alert(data.message || "Instalación iniciada"))
+            .catch(() => alert("Error: El servidor no responde o la ruta /instalar no existe en Python"));
         }
     </script>
 </body>
