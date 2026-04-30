@@ -8,7 +8,7 @@ CORS(app)
 
 # Configuración de rutas para Render
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
-# La base de datos se guarda en tu subcarpeta arcadelocal
+# La base de datos se guarda en tu subcarpeta arcadelocal según tu estructura
 DB_PATH = os.path.join(BASE_PATH, 'arcadelocal', 'usuarios_arcade.db')
 
 def init_db():
@@ -29,20 +29,15 @@ def init_db():
 
 init_db()
 
-# --- RUTAS DE NAVEGACIÓN ---
-
 @app.route('/')
 def home():
-    # Sirve el index.html desde la raíz
     return send_from_directory(BASE_PATH, 'index.html')
 
 @app.route('/<path:path>')
 def serve_static(path):
-    # CORRECCIÓN CRUCIAL: Esta línea permite entrar a subcarpetas
-    # como 'arcadelocal/archivoslocales/archivo.txt'
+    # Esta función permite que rutas como 'arcadelocal/archivoslocales/crash.txt' funcionen
     return send_from_directory(BASE_PATH, path)
 
-# --- RUTA DE AUTENTICACIÓN ---
 @app.route('/auth', methods=['POST'])
 def auth():
     datos = request.json
@@ -69,7 +64,7 @@ def auth():
         conn.close()
         if user:
             return jsonify({"status": "ok", "nombre": user[0]}), 200
-        return jsonify({"status": "error", "message": "Usuario no encontrado"}), 401
+        return jsonify({"status": "error", "message": "Credenciales inválidas"}), 401
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

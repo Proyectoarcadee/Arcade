@@ -6,22 +6,24 @@
     <title>Aio Arcade - Dashboard</title>
     <style>
         :root { --neon: #00ffcc; --bg: #0d0d0d; }
-        body { background: var(--bg); color: white; font-family: sans-serif; margin: 0; }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; }
         header { padding: 20px; background: #1a1a1a; border-bottom: 2px solid var(--neon); display: flex; justify-content: space-between; align-items: center; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; padding: 20px; }
-        .card { background: #1a1a1a; border: 1px solid #333; border-radius: 10px; overflow: hidden; text-align: center; }
+        .card { background: #1a1a1a; border: 1px solid #333; border-radius: 10px; overflow: hidden; text-align: center; transition: 0.3s; }
+        .card:hover { border-color: var(--neon); transform: translateY(-5px); }
         .card img { width: 100%; height: 250px; object-fit: cover; }
-        .btn-instalar { background: var(--neon); border: none; padding: 10px; width: 100%; font-weight: bold; cursor: pointer; }
-        .btn-logout { background: transparent; color: #ff4444; border: 1px solid #ff4444; padding: 8px 15px; cursor: pointer; border-radius: 5px; font-weight: bold; }
-        .filtros { text-align: center; padding: 15px; }
-        .btn-f { background: transparent; color: var(--neon); border: 1px solid var(--neon); padding: 8px 15px; cursor: pointer; margin: 5px; }
+        .btn-instalar { background: var(--neon); border: none; padding: 12px; width: 100%; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+        .btn-logout { background: transparent; color: #ff4444; border: 1px solid #ff4444; padding: 8px 15px; cursor: pointer; border-radius: 5px; }
+        .filtros { text-align: center; padding: 15px; background: #111; }
+        .btn-f { background: transparent; color: var(--neon); border: 1px solid var(--neon); padding: 8px 15px; cursor: pointer; margin: 5px; border-radius: 3px; }
+        .btn-f:hover { background: var(--neon); color: black; }
     </style>
 </head>
 <body>
     <header>
-        <h2 style="color: var(--neon)">ARCADE UTN</h2>
+        <h2 style="color: var(--neon); margin: 0;">ARCADE UTN</h2>
         <div>
-            USUARIO: <span id="user-name" style="margin-right: 15px;"></span>
+            <span id="user-name" style="margin-right: 15px; font-weight: bold;"></span>
             <button class="btn-logout" onclick="cerrarSesion()">CERRAR SESIÓN</button>
         </div>
     </header>
@@ -30,12 +32,12 @@
         <button class="btn-f" onclick="filtrar('todos')">TODOS</button>
         <button class="btn-f" onclick="filtrar('psx')">PSX</button>
         <button class="btn-f" onclick="filtrar('fbneo')">ARCADE</button>
+        <button class="btn-f" onclick="filtrar('n64')">N64</button>
+        <button class="btn-f" onclick="filtrar('gamecube')">GAMECUBE</button>
         <button class="btn-f" onclick="filtrar('xbox')">XBOX</button>
-        <button class="btn-f" onclick="filtrar('xbox')">GAMECUBE</button>
-        <button class="btn-f" onclick="filtrar('xbox')">N64</button>
     </div>
 
-    <div class="grid" id="grid"></div>
+    <div id="grid" class="grid"></div>
 
     <script>
         window.onload = () => {
@@ -59,8 +61,8 @@
             lista.forEach(j => {
                 container.innerHTML += `
                     <div class="card">
-                        <img src="${j.imagen}">
-                        <p>${j.titulo}</p>
+                        <img src="${j.imagen}" alt="${j.titulo}">
+                        <p style="padding: 10px; margin: 0;">${j.titulo}</p>
                         <button class="btn-instalar" onclick="instalar('${j.url}')">INSTALAR</button>
                     </div>`;
             });
@@ -71,9 +73,8 @@
             render(f);
         }
 
-        // FUNCIÓN DE DESCARGA DIRECTA
         function instalar(url) {
-            // Esto abrirá el archivo y forzará la descarga en el navegador
+            // Activa la descarga directa del navegador
             window.location.href = url; 
         }
     </script>
