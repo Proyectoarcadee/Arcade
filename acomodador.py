@@ -6,9 +6,7 @@ import os
 app = Flask(__name__)
 CORS(app)
 
-# Configuración de rutas para Render
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
-# La base de datos se guarda en tu subcarpeta arcadelocal según tu estructura
 DB_PATH = os.path.join(BASE_PATH, 'arcadelocal', 'usuarios_arcade.db')
 
 def init_db():
@@ -29,15 +27,34 @@ def init_db():
 
 init_db()
 
+# --- RUTAS DE NAVEGACIÓN (Para que la web se vea, no se descargue) ---
 @app.route('/')
 def home():
     return send_from_directory(BASE_PATH, 'index.html')
 
-@app.route('/<path:path>')
-def serve_static(path):
-    # Agregamos as_attachment=True para que el navegador lo descargue automáticamente
-    return send_from_directory(BASE_PATH, path, as_attachment=True)
+@app.route('/login.html')
+def login_page():
+    return send_from_directory(BASE_PATH, 'login.html')
 
+@app.route('/datos.js')
+def datos_js():
+    return send_from_directory(BASE_PATH, 'datos.js')
+
+@app.route('/imagenes/<path:filename>')
+def serve_images(filename):
+    return send_from_directory(os.path.join(BASE_PATH, 'imagenes'), filename)
+
+# --- RUTA DE DESCARGAS (Solo descarga lo que está en archivos_locales) ---
+@app.route('/arcadelocal/archivos_locales/<path:filename>')
+def descargar_juego(filename):
+    # El parámetro as_attachment=True es el que hace la magia de bajar el archivo
+    return send_from_directory(
+        os.path.join(BASE_PATH, 'arcadelocal', 'archivos_locales'), 
+        filename, 
+        as_attachment=True
+    )
+
+# --- AUTENTICACIÓN ---
 @app.route('/auth', methods=['POST'])
 def auth():
     datos = request.json
@@ -55,7 +72,7 @@ def auth():
             conn.commit()
             return jsonify({"status": "ok", "nombre": nombre}), 201
         except:
-            return jsonify({"status": "error", "message": "Email ya registrado"}), 400
+            return jsonify({"status": "error", "message": "Email duplicado"}), 400
         finally:
             conn.close()
     else:  # Login
@@ -64,7 +81,7 @@ def auth():
         conn.close()
         if user:
             return jsonify({"status": "ok", "nombre": user[0]}), 200
-        return jsonify({"status": "error", "message": "Credenciales inválidas"}), 401
+        return jsonify({"status": "error", "message": "Fallo de login"}), 401
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
