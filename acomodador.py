@@ -6,6 +6,7 @@ import os
 app = Flask(__name__)
 CORS(app)
 
+# Configuración de rutas
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_PATH, 'arcadelocal', 'usuarios_arcade.db')
 
@@ -27,8 +28,10 @@ def init_db():
 
 init_db()
 
-# --- RUTAS DE NAVEGACIÓN (Para que la web se vea, no se descargue) ---
+# --- RUTAS DE NAVEGACIÓN (Se ven en el navegador) ---
+
 @app.route('/')
+@app.route('/index.html')
 def home():
     return send_from_directory(BASE_PATH, 'index.html')
 
@@ -44,10 +47,11 @@ def datos_js():
 def serve_images(filename):
     return send_from_directory(os.path.join(BASE_PATH, 'imagenes'), filename)
 
-# --- RUTA DE DESCARGAS (Solo descarga lo que está en archivos_locales) ---
+# --- RUTA DE DESCARGAS (Solo descarga juegos de la subcarpeta) ---
+
 @app.route('/arcadelocal/archivos_locales/<path:filename>')
 def descargar_juego(filename):
-    # El parámetro as_attachment=True es el que hace la magia de bajar el archivo
+    # as_attachment=True fuerza la descarga en lugar de abrir el archivo
     return send_from_directory(
         os.path.join(BASE_PATH, 'arcadelocal', 'archivos_locales'), 
         filename, 
@@ -55,6 +59,7 @@ def descargar_juego(filename):
     )
 
 # --- AUTENTICACIÓN ---
+
 @app.route('/auth', methods=['POST'])
 def auth():
     datos = request.json
@@ -65,23 +70,23 @@ def auth():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
-    if nombre:  # Registro
+    if nombre:  # Proceso de Registro
         try:
             cursor.execute('INSERT INTO usuarios (nombre, email, password) VALUES (?, ?, ?)', 
                            (nombre, email, password))
             conn.commit()
             return jsonify({"status": "ok", "nombre": nombre}), 201
         except:
-            return jsonify({"status": "error", "message": "Email duplicado"}), 400
+            return jsonify({"status": "error", "message": "El correo ya existe"}), 400
         finally:
             conn.close()
-    else:  # Login
+    else:  # Proceso de Login
         cursor.execute('SELECT nombre FROM usuarios WHERE email=? AND password=?', (email, password))
         user = cursor.fetchone()
         conn.close()
         if user:
             return jsonify({"status": "ok", "nombre": user[0]}), 200
-        return jsonify({"status": "error", "message": "Fallo de login"}), 401
+        return jsonify({"status": "error", "message": "Usuario o contraseña incorrectos"}), 401
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
