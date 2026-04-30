@@ -35,8 +35,8 @@ def home():
 
 @app.route('/<path:path>')
 def serve_static(path):
-    # Esta función permite que rutas como 'arcadelocal/archivoslocales/crash.txt' funcionen
-    return send_from_directory(BASE_PATH, path)
+    # Agregamos as_attachment=True para que el navegador lo descargue automáticamente
+    return send_from_directory(BASE_PATH, path, as_attachment=True)
 
 @app.route('/auth', methods=['POST'])
 def auth():
