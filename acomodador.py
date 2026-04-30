@@ -8,6 +8,7 @@ CORS(app)
 
 # Configuración de rutas para Render
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
+# La base de datos se guarda en tu subcarpeta arcadelocal
 DB_PATH = os.path.join(BASE_PATH, 'arcadelocal', 'usuarios_arcade.db')
 
 def init_db():
@@ -28,13 +29,17 @@ def init_db():
 
 init_db()
 
-# --- RUTAS PARA MOSTRAR LA WEB ---
+# --- RUTAS DE NAVEGACIÓN ---
+
 @app.route('/')
 def home():
+    # Sirve el index.html desde la raíz
     return send_from_directory(BASE_PATH, 'index.html')
 
 @app.route('/<path:path>')
 def serve_static(path):
+    # CORRECCIÓN CRUCIAL: Esta línea permite entrar a subcarpetas
+    # como 'arcadelocal/archivoslocales/archivo.txt'
     return send_from_directory(BASE_PATH, path)
 
 # --- RUTA DE AUTENTICACIÓN ---
@@ -48,23 +53,23 @@ def auth():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
-    if nombre:  # Lógica de Registro
+    if nombre:  # Registro
         try:
             cursor.execute('INSERT INTO usuarios (nombre, email, password) VALUES (?, ?, ?)', 
                            (nombre, email, password))
             conn.commit()
             return jsonify({"status": "ok", "nombre": nombre}), 201
         except:
-            return jsonify({"status": "error", "message": "El correo ya existe"}), 400
+            return jsonify({"status": "error", "message": "Email ya registrado"}), 400
         finally:
             conn.close()
-    else:  # Lógica de Login
+    else:  # Login
         cursor.execute('SELECT nombre FROM usuarios WHERE email=? AND password=?', (email, password))
         user = cursor.fetchone()
         conn.close()
         if user:
             return jsonify({"status": "ok", "nombre": user[0]}), 200
-        return jsonify({"status": "error", "message": "Credenciales inválidas"}), 401
+        return jsonify({"status": "error", "message": "Usuario no encontrado"}), 401
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

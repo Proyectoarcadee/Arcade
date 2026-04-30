@@ -1,6 +1,6 @@
 const listaDeJuegos = [
 
-  { "titulo": "Crash Bandicoot 1", "consola": "psx", "imagen": "imagenes/image.png", "url": "crash.txt" },
+  { "titulo": "Crash Bandicoot 1", "consola": "psx", "imagen": "imagenes/image.png", "url": "arcadelocal/archivoslocales/crash.txt" },
   { "titulo": "Resident Evil 3", "consola": "psx", "imagen": "imagenes/resident.png", "url": "http://TU_IP_PC:8000/psx/re3.bin" },
   { "titulo": "Metal Gear Solid", "consola": "psx", "imagen": "imagenes/metal.png", "url": "http://TU_IP_PC:8000/psx/mgs.bin" },
   { "titulo": "Tekken 3", "consola": "psx", "imagen": "imagenes/tekken.png", "url": "http://TU_IP_PC:8000/psx/tekken3.bin" },
