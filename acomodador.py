@@ -4,9 +4,9 @@ import sqlite3
 import os
 
 app = Flask(__name__)
-CORS(app) # Crucial para evitar errores de bloqueo en el navegador
+CORS(app)
 
-# Configuración de carpetas para Render
+# Configuración de rutas para Render
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_PATH, 'arcadelocal', 'usuarios_arcade.db')
 
@@ -28,7 +28,7 @@ def init_db():
 
 init_db()
 
-# --- RUTAS DE NAVEGACIÓN ---
+# --- RUTAS PARA MOSTRAR LA WEB ---
 @app.route('/')
 def home():
     return send_from_directory(BASE_PATH, 'index.html')
@@ -48,7 +48,7 @@ def auth():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
-    if nombre:  # REGISTRO
+    if nombre:  # Lógica de Registro
         try:
             cursor.execute('INSERT INTO usuarios (nombre, email, password) VALUES (?, ?, ?)', 
                            (nombre, email, password))
@@ -58,22 +58,13 @@ def auth():
             return jsonify({"status": "error", "message": "El correo ya existe"}), 400
         finally:
             conn.close()
-    else:  # LOGIN
+    else:  # Lógica de Login
         cursor.execute('SELECT nombre FROM usuarios WHERE email=? AND password=?', (email, password))
         user = cursor.fetchone()
         conn.close()
         if user:
             return jsonify({"status": "ok", "nombre": user[0]}), 200
-        return jsonify({"status": "error", "message": "Usuario o clave incorrectos"}), 401
-
-# --- NUEVA RUTA: INSTALAR ---
-@app.route('/instalar', methods=['POST'])
-def instalar():
-    datos = request.json
-    juego = datos.get('juego')
-    consola = datos.get('consola')
-    # Aquí puedes agregar tu lógica de descarga
-    return jsonify({"status": "ok", "message": f"Iniciando descarga de {juego} ({consola})"}), 200
+        return jsonify({"status": "error", "message": "Credenciales inválidas"}), 401
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

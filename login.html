@@ -32,8 +32,8 @@
 <body>
     <div class="auth-card">
         <h2 id="form-title">INICIAR SESIÓN</h2>
-        <input type="text" id="nombre" placeholder="Tu Nombre (Solo para registro)" style="display: none;">
-        <input type="email" id="email" placeholder="Correo Electrónico">
+        <input type="text" id="nombre" placeholder="Tu Nombre" style="display: none;">
+        <input type="email" id="email" placeholder="Correo">
         <input type="password" id="password" placeholder="Contraseña">
         <button class="btn-main" onclick="procesarAuth()">INGRESAR</button>
         <span class="toggle-link" onclick="toggleForm()" id="toggle-text">¿No tienes cuenta? Regístrate aquí</span>
@@ -45,12 +45,11 @@
             const title = document.getElementById('form-title');
             const btn = document.querySelector('.btn-main');
             const toggle = document.getElementById('toggle-text');
-
             if (nombreInput.style.display === 'none') {
                 nombreInput.style.display = 'block';
                 title.innerText = 'REGISTRARSE';
                 btn.innerText = 'CREAR CUENTA';
-                toggle.innerText = '¿Ya tienes cuenta? Inicia sesión aquí';
+                toggle.innerText = '¿Ya tienes cuenta? Inicia sesión';
             } else {
                 nombreInput.style.display = 'none';
                 title.innerText = 'INICIAR SESIÓN';
@@ -62,30 +61,25 @@
         async function procesarAuth() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            const nombreInput = document.getElementById('nombre');
-            const nombre = nombreInput.style.display === 'none' ? null : nombreInput.value;
+            const nombre = document.getElementById('nombre').style.display === 'none' ? null : document.getElementById('nombre').value;
 
-            const datos = { nombre, email, password };
-            const url = 'https://arcade-3qfs.onrender.com/auth'; 
-            
             try {
-                const respuesta = await fetch(url, {
+                const respuesta = await fetch('https://arcade-3qfs.onrender.com/auth', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(datos)
+                    body: JSON.stringify({ nombre, email, password })
                 });
 
                 const resultado = await respuesta.json();
-                
                 if (respuesta.ok) {
-                    localStorage.setItem('usuario', resultado.nombre); // Sincronizado con index
-                    alert("¡Éxito! Bienvenido " + resultado.nombre);
+                    localStorage.setItem('usuario', resultado.nombre); // Llave de sesión
+                    alert("¡Bienvenido " + resultado.nombre + "!");
                     window.location.href = "index.html"; 
                 } else {
                     alert("Error: " + resultado.message);
                 }
             } catch (error) {
-                alert("Servidor cargando, intenta en 5 segundos.");
+                alert("Error al conectar con el servidor.");
             }
         }
     </script>
