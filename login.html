@@ -5,32 +5,49 @@
     <title>Acceso - Arcade</title>
     <style>
         :root { --neon: #00ffcc; --bg: #0d0d0d; }
-        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .container { background: #1a1a1a; padding: 30px; border-radius: 15px; border: 1px solid var(--neon); width: 350px; text-align: center; box-shadow: 0 0 20px rgba(0,255,204,0.2); }
+        body { 
+            background: var(--bg); 
+            background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('/imagenes/image.png'); 
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: white; 
+            font-family: 'Segoe UI', sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+        }
+        .container { 
+            background: rgba(26, 26, 26, 0.9); 
+            padding: 30px; 
+            border-radius: 15px; 
+            border: 2px solid var(--neon); 
+            width: 350px; 
+            text-align: center; 
+            box-shadow: 0 0 30px rgba(0,255,204,0.3);
+            backdrop-filter: blur(5px);
+        }
         input { width: 100%; padding: 12px; margin: 10px 0; background: #222; border: 1px solid #444; color: white; border-radius: 5px; box-sizing: border-box; }
         button { width: 100%; padding: 12px; background: var(--neon); border: none; font-weight: bold; cursor: pointer; border-radius: 5px; margin-top: 10px; transition: 0.3s; }
-        button:hover { background: #00ccaa; }
+        button:hover { background: #00ccaa; box-shadow: 0 0 15px var(--neon); }
         .hidden { display: none; }
         .link { color: var(--neon); cursor: pointer; font-size: 13px; display: block; margin-top: 15px; text-decoration: underline; }
     </style>
 </head>
 <body>
-
     <div class="container">
         <h2 id="titulo">INICIAR SESIÓN</h2>
-        
         <input type="text" id="reg-nombre" class="hidden" placeholder="Nombre completo">
         <input type="email" id="email" placeholder="Gmail del usuario">
         <input type="password" id="pass" placeholder="Contraseña">
-        
         <div id="seccion-codigo" class="hidden">
-            <p style="font-size: 12px; color: var(--neon);">Ingresa el código enviado a tu correo:</p>
+            <p style="font-size: 12px; color: var(--neon);">Código enviado a tu Gmail:</p>
             <input type="text" id="otp-input" placeholder="6 dígitos">
         </div>
-
         <button id="btn-main" onclick="procesar()">ENTRAR</button>
-
-        <span id="toggle-link" class="link" onclick="cambiarModo()">¿No tienes cuenta? Regístrate</span>
+        <span id="toggle-link" class="link" onclick="cambiarModo()">¿No tienes cuenta? Regístrate aquí</span>
     </div>
 
     <script>
@@ -44,7 +61,7 @@
             document.getElementById('reg-nombre').classList.toggle('hidden', !esRegistro);
             document.getElementById('btn-main').innerText = esRegistro ? "SOLICITAR CÓDIGO" : "ENTRAR";
             document.getElementById('seccion-codigo').classList.add('hidden');
-            document.getElementById('toggle-link').innerText = esRegistro ? "¿Ya tienes cuenta? Loguéate" : "¿No tienes cuenta? Regístrate";
+            document.getElementById('toggle-link').innerText = esRegistro ? "¿Ya tienes cuenta? Loguéate" : "¿No tienes cuenta? Regístrate aquí";
         }
 
         async function procesar() {
@@ -53,7 +70,6 @@
             const nombre = document.getElementById('reg-nombre').value;
 
             if (!esRegistro) {
-                // LOGIN
                 const res = await fetch('/login-directo', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
@@ -63,11 +79,8 @@
                 if (res.ok) {
                     localStorage.setItem('usuario', data.nombre);
                     window.location.href = 'index.html';
-                } else {
-                    alert(data.message);
-                }
+                } else { alert(data.message); }
             } else {
-                // REGISTRO
                 if (!codigoEnviado) {
                     const res = await fetch('/solicitar-registro', {
                         method: 'POST',
@@ -75,14 +88,11 @@
                         body: JSON.stringify({ nombre, email, password })
                     });
                     if (res.ok) {
-                        alert("¡Código enviado al Gmail del usuario!");
+                        alert("¡Código enviado!");
                         document.getElementById('seccion-codigo').classList.remove('hidden');
                         document.getElementById('btn-main').innerText = "VERIFICAR Y CREAR";
                         codigoEnviado = true;
-                    } else {
-                        const data = await res.json();
-                        alert("Error: " + data.message);
-                    }
+                    } else { alert("Error al enviar código."); }
                 } else {
                     const codigo = document.getElementById('otp-input').value;
                     const res = await fetch('/confirmar-registro', {
@@ -90,12 +100,8 @@
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify({ email, codigo })
                     });
-                    if (res.ok) {
-                        alert("¡Cuenta verificada y creada!");
-                        location.reload();
-                    } else {
-                        alert("Código incorrecto.");
-                    }
+                    if (res.ok) { alert("¡Cuenta creada!"); location.reload(); }
+                    else { alert("Código incorrecto."); }
                 }
             }
         }
