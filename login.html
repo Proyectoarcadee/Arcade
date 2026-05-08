@@ -2,84 +2,68 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Arcade Auth</title>
+    <title>Login - Aio Arcade</title>
     <style>
         :root { --neon: #00ffcc; --bg: #0d0d0d; }
-        body {
-            margin: 0; height: 100vh; display: flex; align-items: center; justify-content: center;
-            font-family: 'Segoe UI', sans-serif;
-            background: linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.85)), 
-                        url('https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=1350&q=80');
-            background-size: cover; color: white;
-        }
-        .auth-card {
-            background: #1a1a1a; padding: 40px; border-radius: 15px;
-            border: 2px solid var(--neon); box-shadow: 0 0 20px rgba(0,255,204,0.3);
-            width: 350px; text-align: center;
-        }
-        input {
-            width: 100%; padding: 12px; margin: 10px 0; background: #222;
-            border: 1px solid #444; color: white; border-radius: 5px; box-sizing: border-box;
-        }
-        .btn-main {
-            background: var(--neon); color: black; border: none; width: 100%;
-            padding: 15px; font-weight: bold; cursor: pointer; border-radius: 5px;
-            text-transform: uppercase; margin-top: 10px;
-        }
-        .toggle-link { color: var(--neon); cursor: pointer; font-size: 0.9rem; display: block; margin-top: 15px; }
+        body { background: var(--bg); color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-box { background: #1a1a1a; padding: 40px; border-radius: 20px; border: 1px solid var(--neon); width: 320px; text-align: center; }
+        input { width: 100%; padding: 12px; margin: 10px 0; background: #333; border: 1px solid #555; color: white; border-radius: 5px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: var(--neon); border: none; font-weight: bold; cursor: pointer; border-radius: 5px; margin-top: 10px; }
+        .hidden { display: none; }
+        a { color: var(--neon); text-decoration: none; font-size: 12px; }
     </style>
 </head>
 <body>
-    <div class="auth-card">
-        <h2 id="form-title">INICIAR SESIÓN</h2>
-        <input type="text" id="nombre" placeholder="Tu Nombre" style="display: none;">
-        <input type="email" id="email" placeholder="Correo">
-        <input type="password" id="password" placeholder="Contraseña">
-        <button class="btn-main" onclick="procesarAuth()">INGRESAR</button>
-        <span class="toggle-link" onclick="toggleForm()" id="toggle-text">¿No tienes cuenta? Regístrate aquí</span>
+    <div class="login-box">
+        <h2 style="color: var(--neon)">ARCADE LOGIN</h2>
+        
+        <div id="step1">
+            <input type="email" id="email" placeholder="Gmail">
+            <button onclick="solicitarCodigo()">Enviar Código al Correo</button>
+        </div>
+
+        <div id="step2" class="hidden">
+            <input type="text" id="otp" placeholder="Código de 6 dígitos">
+            <input type="password" id="pass" placeholder="Contraseña">
+            <button onclick="iniciarSesion()">Entrar</button>
+            <br><br>
+            <a href="#" onclick="alert('Usa el mismo flujo de código para validar tu identidad')">¿Olvidaste tu contraseña?</a>
+        </div>
     </div>
 
     <script>
-        function toggleForm() {
-            const nombreInput = document.getElementById('nombre');
-            const title = document.getElementById('form-title');
-            const btn = document.querySelector('.btn-main');
-            const toggle = document.getElementById('toggle-text');
-            if (nombreInput.style.display === 'none') {
-                nombreInput.style.display = 'block';
-                title.innerText = 'REGISTRARSE';
-                btn.innerText = 'CREAR CUENTA';
-                toggle.innerText = '¿Ya tienes cuenta? Inicia sesión';
-            } else {
-                nombreInput.style.display = 'none';
-                title.innerText = 'INICIAR SESIÓN';
-                btn.innerText = 'INGRESAR';
-                toggle.innerText = '¿No tienes cuenta? Regístrate aquí';
+        async function solicitarCodigo() {
+            const email = document.getElementById('email').value;
+            if(!email.includes('@gmail.com')) return alert("Usa un correo de Gmail");
+
+            const res = await fetch('/enviar-otp', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ email })
+            });
+            if(res.ok) {
+                alert("Código enviado. Revisa tu bandeja de entrada.");
+                document.getElementById('step1').classList.add('hidden');
+                document.getElementById('step2').classList.remove('hidden');
             }
         }
 
-        async function procesarAuth() {
+        async function iniciarSesion() {
             const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const nombre = document.getElementById('nombre').style.display === 'none' ? null : document.getElementById('nombre').value;
+            const password = document.getElementById('pass').value;
+            const codigo = document.getElementById('otp').value;
 
-            try {
-                const respuesta = await fetch('https://arcade-3qfs.onrender.com/auth', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nombre, email, password })
-                });
-
-                const resultado = await respuesta.json();
-                if (respuesta.ok) {
-                    localStorage.setItem('usuario', resultado.nombre); // Llave de sesión
-                    alert("¡Bienvenido " + resultado.nombre + "!");
-                    window.location.href = "index.html"; 
-                } else {
-                    alert("Error: " + resultado.message);
-                }
-            } catch (error) {
-                alert("Error al conectar con el servidor.");
+            const res = await fetch('/auth', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ email, password, codigo })
+            });
+            const data = await res.json();
+            if(res.ok) {
+                localStorage.setItem('usuario', data.nombre);
+                window.location.href = 'index.html';
+            } else {
+                alert(data.message);
             }
         }
     </script>
