@@ -9,12 +9,11 @@ app = Flask(__name__)
 CORS(app)
 
 # --- CONFIGURACIÓN DEL "CARTERO" (GMAIL) ---
-# Usa los datos de tu cuenta emisora y la clave de 16 letras
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = 'proyectoarcade1.0@gmail.com' 
-app.config['MAIL_PASSWORD'] = 'bdanphhdurheyocs' 
+app.config['MAIL_PASSWORD'] = 'wzcbrpuahhjukfrx' 
 mail = Mail(app)
 
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -95,7 +94,7 @@ def solicitar_registro():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-# --- CONFIRMACIÓN Y GUARDADO EN DB ---
+# --- CONFIRMACIÓN Y GUARDADO EN BASE DE DATOS ---
 
 @app.route('/confirmar-registro', methods=['POST'])
 def confirmar_registro():
@@ -118,7 +117,7 @@ def confirmar_registro():
         finally:
             conn.close()
     
-    return jsonify({"status": "error", "message": "Código incorrecto o expirado"}), 401
+    return jsonify({"status": "error", "message": "Código incorrecto"}), 401
 
 # --- LOGIN TRADICIONAL ---
 
@@ -138,7 +137,7 @@ def login_directo():
         return jsonify({"status": "ok", "nombre": user[0]}), 200
     return jsonify({"status": "error", "message": "Credenciales incorrectas"}), 401
 
-# --- ARRANQUE DEL SERVIDOR (IMPORTANTE) ---
+# --- ARRANQUE DEL SERVIDOR ---
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

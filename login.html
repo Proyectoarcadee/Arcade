@@ -37,15 +37,18 @@
     </style>
 </head>
 <body>
+
     <div class="container">
         <h2 id="titulo">INICIAR SESIÓN</h2>
         <input type="text" id="reg-nombre" class="hidden" placeholder="Nombre completo">
         <input type="email" id="email" placeholder="Gmail del usuario">
         <input type="password" id="pass" placeholder="Contraseña">
+        
         <div id="seccion-codigo" class="hidden">
-            <p style="font-size: 12px; color: var(--neon);">Código enviado a tu Gmail:</p>
+            <p style="font-size: 12px; color: var(--neon);">Código enviado al Gmail del usuario:</p>
             <input type="text" id="otp-input" placeholder="6 dígitos">
         </div>
+
         <button id="btn-main" onclick="procesar()">ENTRAR</button>
         <span id="toggle-link" class="link" onclick="cambiarModo()">¿No tienes cuenta? Regístrate aquí</span>
     </div>
