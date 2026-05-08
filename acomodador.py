@@ -13,6 +13,7 @@ app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = 'proyectoarcade1.0@gmail.com' 
+# Usamos tu clave de 16 letras oficial:
 app.config['MAIL_PASSWORD'] = 'njabtruvszduurmj' 
 mail = Mail(app)
 
@@ -39,7 +40,7 @@ def init_db():
 
 init_db()
 
-# --- RUTAS PARA ARCHIVOS E IMÁGENES ---
+# --- RUTAS DE NAVEGACIÓN Y ARCHIVOS ---
 
 @app.route('/')
 @app.route('/index.html')
@@ -58,7 +59,7 @@ def datos_js():
 def serve_images(filename):
     return send_from_directory(os.path.join(BASE_PATH, 'imagenes'), filename)
 
-# --- SISTEMA DE REGISTRO Y ENVÍO DE CORREO ---
+# --- SISTEMA DE REGISTRO ---
 
 @app.route('/solicitar-registro', methods=['POST'])
 def solicitar_registro():
@@ -74,10 +75,10 @@ def solicitar_registro():
             "codigo": codigo
         }
         
-        msg = Message('Tu Código de Verificación Arcade', 
+        msg = Message('Verifica tu cuenta - Arcade', 
                       sender=app.config['MAIL_USERNAME'], 
                       recipients=[email_u])
-        msg.body = f"Hola {nombre}, tu código para registrarte es: {codigo}"
+        msg.body = f"Hola {nombre}, tu código de verificación es: {codigo}"
         mail.send(msg)
         return jsonify({"status": "ok"}), 200
     except Exception as e:
@@ -98,7 +99,7 @@ def confirmar_registro():
             del registros_pendientes[email]
             return jsonify({"status": "ok"}), 201
         except:
-            return jsonify({"status": "error", "message": "Este correo ya está registrado"}), 400
+            return jsonify({"status": "error", "message": "Email ya registrado"}), 400
         finally:
             conn.close()
     return jsonify({"status": "error", "message": "Código incorrecto"}), 401
@@ -112,8 +113,7 @@ def login_directo():
                    (datos.get('email'), datos.get('password')))
     user = cursor.fetchone()
     conn.close()
-    if user:
-        return jsonify({"status": "ok", "nombre": user[0]}), 200
+    if user: return jsonify({"status": "ok", "nombre": user[0]}), 200
     return jsonify({"status": "error"}), 401
 
 if __name__ == '__main__':
