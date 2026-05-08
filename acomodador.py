@@ -13,8 +13,8 @@ CORS(app)
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'tu_correo@gmail.com' 
-app.config['MAIL_PASSWORD'] = 'tu_clave_de_16_letras' 
+app.config['MAIL_USERNAME'] = 'proyectoarcade1.0@gmail.com' 
+app.config['MAIL_PASSWORD'] = 'bdanphhdurheyocs' 
 mail = Mail(app)
 
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
