@@ -8,7 +8,7 @@ import random
 app = Flask(__name__)
 CORS(app)
 
-# --- CONFIGURACIÓN DEL "CARTERO" (GMAIL) ---
+# --- CONFIGURACIÓN DEL CARTERO ---
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
@@ -39,6 +39,7 @@ def init_db():
 
 init_db()
 
+# --- RUTAS DE ARCHIVOS ---
 @app.route('/')
 @app.route('/index.html')
 def home():
@@ -48,22 +49,37 @@ def home():
 def login_page():
     return send_from_directory(BASE_PATH, 'login.html')
 
+@app.route('/datos.js')
+def datos_js():
+    return send_from_directory(BASE_PATH, 'datos.js')
+
+@app.route('/imagenes/<path:filename>')
+def serve_images(filename):
+    return send_from_directory(os.path.join(BASE_PATH, 'imagenes'), filename)
+
+# --- EL MOTOR DEL REGISTRO (Esto es lo que faltaba) ---
 @app.route('/solicitar-registro', methods=['POST'])
 def solicitar_registro():
     try:
         datos = request.json
         email_u = datos.get('email')
+        nombre = datos.get('nombre')
+        
         codigo = str(random.randint(100000, 999999))
         registros_pendientes[email_u] = {
-            "nombre": datos.get('nombre'), 
+            "nombre": nombre, 
             "password": datos.get('password'), 
             "codigo": codigo
         }
-        msg = Message('Tu Código Arcade', sender=app.config['MAIL_USERNAME'], recipients=[email_u])
-        msg.body = f"Tu código de verificación es: {codigo}"
+        
+        msg = Message('Tu Código Arcade', 
+                      sender=app.config['MAIL_USERNAME'], 
+                      recipients=[email_u])
+        msg.body = f"Hola {nombre}, tu código es: {codigo}"
         mail.send(msg)
         return jsonify({"status": "ok"}), 200
     except Exception as e:
+        print(f"Error: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/confirmar-registro', methods=['POST'])
@@ -78,12 +94,13 @@ def confirmar_registro():
             cursor.execute('INSERT INTO usuarios (nombre, email, password) VALUES (?, ?, ?)', 
                            (user['nombre'], email, user['password']))
             conn.commit()
+            del registros_pendientes[email]
             return jsonify({"status": "ok"}), 201
         except:
             return jsonify({"status": "error", "message": "Ya existe"}), 400
         finally:
             conn.close()
-    return jsonify({"status": "error"}), 401
+    return jsonify({"status": "error", "message": "Código incorrecto"}), 401
 
 @app.route('/login-directo', methods=['POST'])
 def login_directo():
@@ -98,4 +115,5 @@ def login_directo():
     return jsonify({"status": "error"}), 401
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
