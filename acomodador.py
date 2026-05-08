@@ -8,7 +8,7 @@ import random
 app = Flask(__name__)
 CORS(app)
 
-# --- CONFIGURACIÓN DEL CARTERO ---
+# --- CONFIGURACIÓN DEL "CARTERO" (GMAIL) ---
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
@@ -39,7 +39,8 @@ def init_db():
 
 init_db()
 
-# --- RUTAS DE ARCHIVOS ---
+# --- RUTAS PARA ARCHIVOS E IMÁGENES ---
+
 @app.route('/')
 @app.route('/index.html')
 def home():
@@ -57,7 +58,8 @@ def datos_js():
 def serve_images(filename):
     return send_from_directory(os.path.join(BASE_PATH, 'imagenes'), filename)
 
-# --- EL MOTOR DEL REGISTRO (Esto es lo que faltaba) ---
+# --- SISTEMA DE REGISTRO Y ENVÍO DE CORREO ---
+
 @app.route('/solicitar-registro', methods=['POST'])
 def solicitar_registro():
     try:
@@ -72,14 +74,13 @@ def solicitar_registro():
             "codigo": codigo
         }
         
-        msg = Message('Tu Código Arcade', 
+        msg = Message('Tu Código de Verificación Arcade', 
                       sender=app.config['MAIL_USERNAME'], 
                       recipients=[email_u])
-        msg.body = f"Hola {nombre}, tu código es: {codigo}"
+        msg.body = f"Hola {nombre}, tu código para registrarte es: {codigo}"
         mail.send(msg)
         return jsonify({"status": "ok"}), 200
     except Exception as e:
-        print(f"Error: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/confirmar-registro', methods=['POST'])
@@ -97,7 +98,7 @@ def confirmar_registro():
             del registros_pendientes[email]
             return jsonify({"status": "ok"}), 201
         except:
-            return jsonify({"status": "error", "message": "Ya existe"}), 400
+            return jsonify({"status": "error", "message": "Este correo ya está registrado"}), 400
         finally:
             conn.close()
     return jsonify({"status": "error", "message": "Código incorrecto"}), 401
@@ -111,7 +112,8 @@ def login_directo():
                    (datos.get('email'), datos.get('password')))
     user = cursor.fetchone()
     conn.close()
-    if user: return jsonify({"status": "ok", "nombre": user[0]}), 200
+    if user:
+        return jsonify({"status": "ok", "nombre": user[0]}), 200
     return jsonify({"status": "error"}), 401
 
 if __name__ == '__main__':
