@@ -9,19 +9,19 @@ app = Flask(__name__)
 CORS(app)
 
 # --- CONFIGURACIÓN DE GMAIL ---
-# Reemplaza con tus datos y las 16 letras que generaste
+# Reemplaza con tus datos y las 16 letras que generaste en Google
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'proyectoarcade1.0@gmail.com' 
-app.config['MAIL_PASSWORD'] = 'bdanphhdurheyocs' 
+app.config['MAIL_USERNAME'] = 'tu_correo@gmail.com' 
+app.config['MAIL_PASSWORD'] = 'tu_clave_de_16_letras' 
 mail = Mail(app)
 
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_PATH, 'arcadelocal', 'usuarios_arcade.db')
 
-# Diccionario temporal para códigos OTP (Email: Código)
-codigos_activos = {}
+# Diccionario para guardar datos antes de que confirmen el correo
+registros_pendientes = {}
 
 def init_db():
     if not os.path.exists(os.path.join(BASE_PATH, 'arcadelocal')):
@@ -42,6 +42,7 @@ def init_db():
 init_db()
 
 # --- RUTAS DE NAVEGACIÓN ---
+
 @app.route('/')
 @app.route('/index.html')
 def home():
@@ -59,7 +60,6 @@ def datos_js():
 def serve_images(filename):
     return send_from_directory(os.path.join(BASE_PATH, 'imagenes'), filename)
 
-# --- RUTA DE DESCARGAS ---
 @app.route('/arcadelocal/archivos_locales/<path:filename>')
 def descargar_juego(filename):
     return send_from_directory(
@@ -68,73 +68,76 @@ def descargar_juego(filename):
         as_attachment=True
     )
 
-# --- SISTEMA DE VALIDACIÓN GMAIL (OTP) ---
-@app.route('/enviar-otp', methods=['POST'])
-def enviar_otp():
-    email = request.json.get('email')
+# --- SISTEMA DE REGISTRO CON VERIFICACIÓN (OTP) ---
+
+@app.route('/solicitar-registro', methods=['POST'])
+def solicitar_registro():
+    datos = request.json
+    email = datos.get('email')
+    nombre = datos.get('nombre')
+    password = datos.get('password')
+    
+    # Generamos código de 6 dígitos
     codigo = str(random.randint(100000, 999999))
-    codigos_activos[email] = codigo
+    
+    # Guardamos temporalmente
+    registros_pendientes[email] = {
+        "nombre": nombre,
+        "password": password,
+        "codigo": codigo
+    }
     
     try:
-        msg = Message('Código de Acceso - Arcade UTN',
+        msg = Message('Verifica tu cuenta - Arcade UTN',
                       sender=app.config['MAIL_USERNAME'],
                       recipients=[email])
-        msg.body = f"Tu código de acceso para el sistema es: {codigo}"
+        msg.body = f"Hola {nombre}, tu código de verificación para registrarte es: {codigo}"
         mail.send(msg)
-        return jsonify({"status": "ok"}), 200
+        return jsonify({"status": "ok", "message": "Código enviado"}), 200
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-# --- REGISTRO Y LOGIN ---
-@app.route('/auth', methods=['POST'])
-def auth():
+@app.route('/confirmar-registro', methods=['POST'])
+def confirmar_registro():
+    datos = request.json
+    email = datos.get('email')
+    codigo_usuario = datos.get('codigo')
+
+    if email in registros_pendientes and registros_pendientes[email]['codigo'] == codigo_usuario:
+        user_data = registros_pendientes[email]
+        
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        try:
+            cursor.execute('INSERT INTO usuarios (nombre, email, password) VALUES (?, ?, ?)', 
+                           (user_data['nombre'], email, user_data['password']))
+            conn.commit()
+            del registros_pendientes[email]
+            return jsonify({"status": "ok", "message": "Cuenta creada con éxito"}), 201
+        except:
+            return jsonify({"status": "error", "message": "El correo ya está registrado"}), 400
+        finally:
+            conn.close()
+    
+    return jsonify({"status": "error", "message": "Código incorrecto o expirado"}), 401
+
+# --- LOGIN TRADICIONAL ---
+
+@app.route('/login-directo', methods=['POST'])
+def login_directo():
     datos = request.json
     email = datos.get('email')
     password = datos.get('password')
-    nombre = datos.get('nombre')
-    codigo_otp = datos.get('codigo') # El código que llegó al correo
-
-    # Validar el código primero
-    if email not in codigos_activos or codigos_activos[email] != codigo_otp:
-        return jsonify({"status": "error", "message": "Código incorrecto"}), 401
 
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
+    cursor.execute('SELECT nombre FROM usuarios WHERE email=? AND password=?', (email, password))
+    user = cursor.fetchone()
+    conn.close()
 
-    if nombre: # Registro
-        try:
-            cursor.execute('INSERT INTO usuarios (nombre, email, password) VALUES (?, ?, ?)', 
-                           (nombre, email, password))
-            conn.commit()
-            del codigos_activos[email]
-            return jsonify({"status": "ok", "nombre": nombre}), 201
-        except:
-            return jsonify({"status": "error", "message": "Email ya existe"}), 400
-    else: # Login
-        cursor.execute('SELECT nombre FROM usuarios WHERE email=? AND password=?', (email, password))
-        user = cursor.fetchone()
-        if user:
-            del codigos_activos[email]
-            return jsonify({"status": "ok", "nombre": user[0]}), 200
-        return jsonify({"status": "error", "message": "Clave incorrecta"}), 401
-
-# --- RECUPERACIÓN DE CONTRASEÑA ---
-@app.route('/cambiar-password', methods=['POST'])
-def cambiar_password():
-    datos = request.json
-    email = datos.get('email')
-    codigo = datos.get('codigo')
-    nueva_password = datos.get('nueva_password')
-
-    if email in codigos_activos and codigos_activos[email] == codigo:
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-        cursor.execute('UPDATE usuarios SET password=? WHERE email=?', (nueva_password, email))
-        conn.commit()
-        conn.close()
-        del codigos_activos[email]
-        return jsonify({"status": "ok"}), 200
-    return jsonify({"status": "error"}), 401
+    if user:
+        return jsonify({"status": "ok", "nombre": user[0]}), 200
+    return jsonify({"status": "error", "message": "Usuario o contraseña incorrectos"}), 401
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
