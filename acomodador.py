@@ -13,7 +13,6 @@ app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = 'proyectoarcade1.0@gmail.com' 
-# Usamos tu clave de 16 letras oficial:
 app.config['MAIL_PASSWORD'] = 'njabtruvszduurmj' 
 mail = Mail(app)
 
@@ -40,7 +39,7 @@ def init_db():
 
 init_db()
 
-# --- RUTAS DE NAVEGACIÓN Y ARCHIVOS ---
+# --- RUTAS DE NAVEGACIÓN ---
 
 @app.route('/')
 @app.route('/index.html')
