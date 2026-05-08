@@ -6,7 +6,6 @@ import os
 import random
 
 app = Flask(__name__)
-# Configuración de CORS más robusta para evitar bloqueos del navegador
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 # --- CONFIGURACIÓN DE GMAIL ---
@@ -14,7 +13,7 @@ app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = 'proyectoarcade1.0@gmail.com' 
-app.config['MAIL_PASSWORD'] = 'njabtruvszduurmj' # Tu clave de aplicación de 16 letras
+app.config['MAIL_PASSWORD'] = 'njabtruvszduurmj' 
 mail = Mail(app)
 
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -40,8 +39,6 @@ def init_db():
 
 init_db()
 
-# --- RUTAS DE NAVEGACIÓN ---
-
 @app.route('/')
 @app.route('/index.html')
 def home():
@@ -59,30 +56,20 @@ def datos_js():
 def serve_images(filename):
     return send_from_directory(os.path.join(BASE_PATH, 'imagenes'), filename)
 
-# --- SISTEMA DE REGISTRO ---
-
 @app.route('/solicitar-registro', methods=['POST'])
 def solicitar_registro():
     try:
         datos = request.json
         email_u = datos.get('email')
         nombre = datos.get('nombre')
-        
         codigo = str(random.randint(100000, 999999))
-        registros_pendientes[email_u] = {
-            "nombre": nombre, 
-            "password": datos.get('password'), 
-            "codigo": codigo
-        }
+        registros_pendientes[email_u] = {"nombre": nombre, "password": datos.get('password'), "codigo": codigo}
         
-        msg = Message('Verifica tu cuenta - Arcade', 
-                      sender=app.config['MAIL_USERNAME'], 
-                      recipients=[email_u])
+        msg = Message('Verifica tu cuenta - Arcade', sender=app.config['MAIL_USERNAME'], recipients=[email_u])
         msg.body = f"Hola {nombre}, tu código de verificación es: {codigo}"
         mail.send(msg)
         return jsonify({"status": "ok"}), 200
     except Exception as e:
-        print(f"Error detectado: {e}") # Esto aparecerá en los logs de Render
         return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/confirmar-registro', methods=['POST'])
@@ -94,8 +81,7 @@ def confirmar_registro():
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         try:
-            cursor.execute('INSERT INTO usuarios (nombre, email, password) VALUES (?, ?, ?)', 
-                           (user['nombre'], email, user['password']))
+            cursor.execute('INSERT INTO usuarios (nombre, email, password) VALUES (?, ?, ?)', (user['nombre'], email, user['password']))
             conn.commit()
             del registros_pendientes[email]
             return jsonify({"status": "ok"}), 201
@@ -110,8 +96,7 @@ def login_directo():
     datos = request.json
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute('SELECT nombre FROM usuarios WHERE email=? AND password=?', 
-                   (datos.get('email'), datos.get('password')))
+    cursor.execute('SELECT nombre FROM usuarios WHERE email=? AND password=?', (datos.get('email'), datos.get('password')))
     user = cursor.fetchone()
     conn.close()
     if user: return jsonify({"status": "ok", "nombre": user[0]}), 200
