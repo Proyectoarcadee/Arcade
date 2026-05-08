@@ -13,13 +13,13 @@ app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = 'proyectoarcade1.0@gmail.com' 
-app.config['MAIL_PASSWORD'] = 'wzcbrpuahhjukfrx' 
+# Aquí he puesto tu clave nueva sin espacios
+app.config['MAIL_PASSWORD'] = 'njabtruvszduurmj' 
 mail = Mail(app)
 
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_PATH, 'arcadelocal', 'usuarios_arcade.db')
 
-# Diccionario temporal para guardar datos antes de la confirmación
 registros_pendientes = {}
 
 def init_db():
@@ -40,7 +40,7 @@ def init_db():
 
 init_db()
 
-# --- RUTAS DE NAVEGACIÓN Y ARCHIVOS ---
+# --- RUTAS DE NAVEGACIÓN ---
 
 @app.route('/')
 @app.route('/index.html')
@@ -59,32 +59,21 @@ def datos_js():
 def serve_images(filename):
     return send_from_directory(os.path.join(BASE_PATH, 'imagenes'), filename)
 
-@app.route('/arcadelocal/archivos_locales/<path:filename>')
-def descargar_juego(filename):
-    return send_from_directory(
-        os.path.join(BASE_PATH, 'arcadelocal', 'archivos_locales'), 
-        filename, 
-        as_attachment=True
-    )
-
-# --- SISTEMA DE REGISTRO (SOLICITUD Y ENVÍO DE CÓDIGO) ---
+# --- SISTEMA DE REGISTRO ---
 
 @app.route('/solicitar-registro', methods=['POST'])
 def solicitar_registro():
-    datos = request.json
-    email_usuario = datos.get('email')
-    nombre = datos.get('nombre')
-    password = datos.get('password')
-    
-    codigo = str(random.randint(100000, 999999))
-    
-    registros_pendientes[email_usuario] = {
-        "nombre": nombre,
-        "password": password,
-        "codigo": codigo
-    }
-    
     try:
+        datos = request.json
+        email_usuario = datos.get('email')
+        nombre = datos.get('nombre')
+        password = datos.get('password')
+        
+        codigo = str(random.randint(100000, 999999))
+        registros_pendientes[email_usuario] = {
+            "nombre": nombre, "password": password, "codigo": codigo
+        }
+        
         msg = Message('Verifica tu cuenta - Arcade',
                       sender=app.config['MAIL_USERNAME'],
                       recipients=[email_usuario])
@@ -92,9 +81,8 @@ def solicitar_registro():
         mail.send(msg)
         return jsonify({"status": "ok"}), 200
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
-
-# --- CONFIRMACIÓN Y GUARDADO EN BASE DE DATOS ---
+        print(f"Error en Gmail: {e}")
+        return jsonify({"status": "error", "message": "Error al enviar correo"}), 500
 
 @app.route('/confirmar-registro', methods=['POST'])
 def confirmar_registro():
@@ -113,31 +101,23 @@ def confirmar_registro():
             del registros_pendientes[email]
             return jsonify({"status": "ok"}), 201
         except:
-            return jsonify({"status": "error", "message": "El email ya está registrado"}), 400
+            return jsonify({"status": "error", "message": "Email ya registrado"}), 400
         finally:
             conn.close()
-    
     return jsonify({"status": "error", "message": "Código incorrecto"}), 401
-
-# --- LOGIN TRADICIONAL ---
 
 @app.route('/login-directo', methods=['POST'])
 def login_directo():
     datos = request.json
-    email = datos.get('email')
-    password = datos.get('password')
-
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute('SELECT nombre FROM usuarios WHERE email=? AND password=?', (email, password))
+    cursor.execute('SELECT nombre FROM usuarios WHERE email=? AND password=?', 
+                   (datos.get('email'), datos.get('password')))
     user = cursor.fetchone()
     conn.close()
-
     if user:
         return jsonify({"status": "ok", "nombre": user[0]}), 200
     return jsonify({"status": "error", "message": "Credenciales incorrectas"}), 401
-
-# --- ARRANQUE DEL SERVIDOR ---
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
