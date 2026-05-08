@@ -56,6 +56,8 @@
     <script>
         let esRegistro = false;
         let codigoEnviado = false;
+        // Cambia esto por la URL de tu backend en Render
+        const API_URL = "https://arcade-3qfs.onrender.com";
 
         function cambiarModo() {
             esRegistro = !esRegistro;
@@ -72,40 +74,45 @@
             const password = document.getElementById('pass').value;
             const nombre = document.getElementById('reg-nombre').value;
 
-            if (!esRegistro) {
-                const res = await fetch('/login-directo', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ email, password })
-                });
-                const data = await res.json();
-                if (res.ok) {
-                    localStorage.setItem('usuario', data.nombre);
-                    window.location.href = 'index.html';
-                } else { alert(data.message); }
-            } else {
-                if (!codigoEnviado) {
-                    const res = await fetch('/solicitar-registro', {
+            try {
+                if (!esRegistro) {
+                    const res = await fetch(`${API_URL}/login-directo`, {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({ nombre, email, password })
+                        body: JSON.stringify({ email, password })
                     });
+                    const data = await res.json();
                     if (res.ok) {
-                        alert("¡Código enviado!");
-                        document.getElementById('seccion-codigo').classList.remove('hidden');
-                        document.getElementById('btn-main').innerText = "VERIFICAR Y CREAR";
-                        codigoEnviado = true;
-                    } else { alert("Error al enviar código."); }
+                        localStorage.setItem('usuario', data.nombre);
+                        window.location.href = 'index.html';
+                    } else { alert("Usuario o contraseña incorrectos"); }
                 } else {
-                    const codigo = document.getElementById('otp-input').value;
-                    const res = await fetch('/confirmar-registro', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({ email, codigo })
-                    });
-                    if (res.ok) { alert("¡Cuenta creada!"); location.reload(); }
-                    else { alert("Código incorrecto."); }
+                    if (!codigoEnviado) {
+                        const res = await fetch(`${API_URL}/solicitar-registro`, {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({ nombre, email, password })
+                        });
+                        if (res.ok) {
+                            alert("¡Código enviado!");
+                            document.getElementById('seccion-codigo').classList.remove('hidden');
+                            document.getElementById('btn-main').innerText = "VERIFICAR Y CREAR";
+                            codigoEnviado = true;
+                        } else { alert("Error al enviar código. Revisa que el servidor esté activo."); }
+                    } else {
+                        const codigo = document.getElementById('otp-input').value;
+                        const res = await fetch(`${API_URL}/confirmar-registro`, {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({ email, codigo })
+                        });
+                        if (res.ok) { alert("¡Cuenta creada!"); location.reload(); }
+                        else { alert("Código incorrecto."); }
+                    }
                 }
+            } catch (err) {
+                console.error(err);
+                alert("Error de conexión con el servidor.");
             }
         }
     </script>

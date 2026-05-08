@@ -6,14 +6,15 @@ import os
 import random
 
 app = Flask(__name__)
-CORS(app)
+# Configuración de CORS más robusta para evitar bloqueos del navegador
+CORS(app, resources={r"/*": {"origins": "*"}})
 
-# --- CONFIGURACIÓN DEL "CARTERO" (GMAIL) ---
+# --- CONFIGURACIÓN DE GMAIL ---
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = 'proyectoarcade1.0@gmail.com' 
-app.config['MAIL_PASSWORD'] = 'njabtruvszduurmj' 
+app.config['MAIL_PASSWORD'] = 'njabtruvszduurmj' # Tu clave de aplicación de 16 letras
 mail = Mail(app)
 
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -81,6 +82,7 @@ def solicitar_registro():
         mail.send(msg)
         return jsonify({"status": "ok"}), 200
     except Exception as e:
+        print(f"Error detectado: {e}") # Esto aparecerá en los logs de Render
         return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/confirmar-registro', methods=['POST'])
