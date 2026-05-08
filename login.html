@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Acceso - Arcade UTN</title>
+    <title>Acceso - Arcade</title>
     <style>
         :root { --neon: #00ffcc; --bg: #0d0d0d; }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
@@ -20,17 +20,17 @@
         <h2 id="titulo">INICIAR SESIÓN</h2>
         
         <input type="text" id="reg-nombre" class="hidden" placeholder="Nombre completo">
-        <input type="email" id="email" placeholder="Tu Gmail">
-        <input type="password" id="pass" placeholder="Tu contraseña">
+        <input type="email" id="email" placeholder="Gmail del usuario">
+        <input type="password" id="pass" placeholder="Contraseña">
         
         <div id="seccion-codigo" class="hidden">
-            <p style="font-size: 12px; color: var(--neon);">Ingresa el código que enviamos a tu correo:</p>
-            <input type="text" id="otp-input" placeholder="Código de 6 dígitos">
+            <p style="font-size: 12px; color: var(--neon);">Ingresa el código enviado a tu correo:</p>
+            <input type="text" id="otp-input" placeholder="6 dígitos">
         </div>
 
         <button id="btn-main" onclick="procesar()">ENTRAR</button>
 
-        <span id="toggle-link" class="link" onclick="cambiarModo()">¿No tienes cuenta? Regístrate aquí</span>
+        <span id="toggle-link" class="link" onclick="cambiarModo()">¿No tienes cuenta? Regístrate</span>
     </div>
 
     <script>
@@ -40,11 +40,11 @@
         function cambiarModo() {
             esRegistro = !esRegistro;
             codigoEnviado = false;
-            document.getElementById('titulo').innerText = esRegistro ? "REGISTRO NUEVO" : "INICIAR SESIÓN";
+            document.getElementById('titulo').innerText = esRegistro ? "REGISTRO" : "INICIAR SESIÓN";
             document.getElementById('reg-nombre').classList.toggle('hidden', !esRegistro);
             document.getElementById('btn-main').innerText = esRegistro ? "SOLICITAR CÓDIGO" : "ENTRAR";
             document.getElementById('seccion-codigo').classList.add('hidden');
-            document.getElementById('toggle-link').innerText = esRegistro ? "¿Ya tienes cuenta? Loguéate" : "¿No tienes cuenta? Regístrate aquí";
+            document.getElementById('toggle-link').innerText = esRegistro ? "¿Ya tienes cuenta? Loguéate" : "¿No tienes cuenta? Regístrate";
         }
 
         async function procesar() {
@@ -53,7 +53,7 @@
             const nombre = document.getElementById('reg-nombre').value;
 
             if (!esRegistro) {
-                // --- LÓGICA DE LOGIN ---
+                // LOGIN
                 const res = await fetch('/login-directo', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
@@ -67,7 +67,7 @@
                     alert(data.message);
                 }
             } else {
-                // --- LÓGICA DE REGISTRO ---
+                // REGISTRO
                 if (!codigoEnviado) {
                     const res = await fetch('/solicitar-registro', {
                         method: 'POST',
@@ -75,12 +75,13 @@
                         body: JSON.stringify({ nombre, email, password })
                     });
                     if (res.ok) {
-                        alert("¡Código enviado! Revisa tu bandeja de entrada.");
+                        alert("¡Código enviado al Gmail del usuario!");
                         document.getElementById('seccion-codigo').classList.remove('hidden');
-                        document.getElementById('btn-main').innerText = "VERIFICAR Y CREAR CUENTA";
+                        document.getElementById('btn-main').innerText = "VERIFICAR Y CREAR";
                         codigoEnviado = true;
                     } else {
-                        alert("Error al enviar el código.");
+                        const data = await res.json();
+                        alert("Error: " + data.message);
                     }
                 } else {
                     const codigo = document.getElementById('otp-input').value;
@@ -90,7 +91,7 @@
                         body: JSON.stringify({ email, codigo })
                     });
                     if (res.ok) {
-                        alert("¡Registro completado! Ahora puedes iniciar sesión.");
+                        alert("¡Cuenta verificada y creada!");
                         location.reload();
                     } else {
                         alert("Código incorrecto.");

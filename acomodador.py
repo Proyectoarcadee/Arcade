@@ -8,13 +8,13 @@ import random
 app = Flask(__name__)
 CORS(app)
 
-# --- CONFIGURACIÓN DE GMAIL ---
-# Reemplaza con tus datos y las 16 letras que generaste en Google
+# --- CONFIGURACIÓN DEL "CARTERO" (GMAIL) ---
+# Aquí pones el correo desde donde saldrán todos los mensajes
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'proyectoarcade1.0@gmail.com' 
-app.config['MAIL_PASSWORD'] = 'bdanphhdurheyocs' 
+app.config['MAIL_USERNAME'] = 'proyectoarcade1.0@gmail.com' # TU CORREO EMISOR
+app.config['MAIL_PASSWORD'] = 'bdanphhdurheyocs' # LAS 16 LETRAS SIN ESPACIOS
 mail = Mail(app)
 
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -68,33 +68,34 @@ def descargar_juego(filename):
         as_attachment=True
     )
 
-# --- SISTEMA DE REGISTRO CON VERIFICACIÓN (OTP) ---
+# --- SISTEMA DE REGISTRO CON VERIFICACIÓN ---
 
 @app.route('/solicitar-registro', methods=['POST'])
 def solicitar_registro():
     datos = request.json
-    email = datos.get('email')
+    email_usuario = datos.get('email') # El correo que el usuario escribió en la web
     nombre = datos.get('nombre')
     password = datos.get('password')
     
-    # Generamos código de 6 dígitos
     codigo = str(random.randint(100000, 999999))
     
-    # Guardamos temporalmente
-    registros_pendientes[email] = {
+    # Guardamos los datos temporalmente
+    registros_pendientes[email_usuario] = {
         "nombre": nombre,
         "password": password,
         "codigo": codigo
     }
     
     try:
-        msg = Message('Verifica tu cuenta - Arcade UTN',
+        # El Cartero envía el mensaje al correo del usuario nuevo
+        msg = Message('Verifica tu cuenta - Arcade',
                       sender=app.config['MAIL_USERNAME'],
-                      recipients=[email])
-        msg.body = f"Hola {nombre}, tu código de verificación para registrarte es: {codigo}"
+                      recipients=[email_usuario])
+        msg.body = f"Hola {nombre}, tu código de verificación para Arcade es: {codigo}"
         mail.send(msg)
-        return jsonify({"status": "ok", "message": "Código enviado"}), 200
+        return jsonify({"status": "ok"}), 200
     except Exception as e:
+        # Si esto falla, devuelve error 500 (Casi siempre es por la contraseña de 16 letras)
         return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/confirmar-registro', methods=['POST'])
@@ -113,15 +114,15 @@ def confirmar_registro():
                            (user_data['nombre'], email, user_data['password']))
             conn.commit()
             del registros_pendientes[email]
-            return jsonify({"status": "ok", "message": "Cuenta creada con éxito"}), 201
+            return jsonify({"status": "ok"}), 201
         except:
-            return jsonify({"status": "error", "message": "El correo ya está registrado"}), 400
+            return jsonify({"status": "error", "message": "Este correo ya está registrado"}), 400
         finally:
             conn.close()
     
-    return jsonify({"status": "error", "message": "Código incorrecto o expirado"}), 401
+    return jsonify({"status": "error", "message": "Código incorrecto"}), 401
 
-# --- LOGIN TRADICIONAL ---
+# --- LOGIN DIRECTO ---
 
 @app.route('/login-directo', methods=['POST'])
 def login_directo():
@@ -137,7 +138,7 @@ def login_directo():
 
     if user:
         return jsonify({"status": "ok", "nombre": user[0]}), 200
-    return jsonify({"status": "error", "message": "Usuario o contraseña incorrectos"}), 401
+    return jsonify({"status": "error", "message": "Correo o contraseña incorrectos"}), 401
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
