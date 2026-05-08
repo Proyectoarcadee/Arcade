@@ -13,7 +13,6 @@ app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = 'proyectoarcade1.0@gmail.com' 
-# Aquí he puesto tu clave nueva sin espacios
 app.config['MAIL_PASSWORD'] = 'njabtruvszduurmj' 
 mail = Mail(app)
 
@@ -40,8 +39,6 @@ def init_db():
 
 init_db()
 
-# --- RUTAS DE NAVEGACIÓN ---
-
 @app.route('/')
 @app.route('/index.html')
 def home():
@@ -51,60 +48,42 @@ def home():
 def login_page():
     return send_from_directory(BASE_PATH, 'login.html')
 
-@app.route('/datos.js')
-def datos_js():
-    return send_from_directory(BASE_PATH, 'datos.js')
-
-@app.route('/imagenes/<path:filename>')
-def serve_images(filename):
-    return send_from_directory(os.path.join(BASE_PATH, 'imagenes'), filename)
-
-# --- SISTEMA DE REGISTRO ---
-
 @app.route('/solicitar-registro', methods=['POST'])
 def solicitar_registro():
     try:
         datos = request.json
-        email_usuario = datos.get('email')
-        nombre = datos.get('nombre')
-        password = datos.get('password')
-        
+        email_u = datos.get('email')
         codigo = str(random.randint(100000, 999999))
-        registros_pendientes[email_usuario] = {
-            "nombre": nombre, "password": password, "codigo": codigo
+        registros_pendientes[email_u] = {
+            "nombre": datos.get('nombre'), 
+            "password": datos.get('password'), 
+            "codigo": codigo
         }
-        
-        msg = Message('Verifica tu cuenta - Arcade',
-                      sender=app.config['MAIL_USERNAME'],
-                      recipients=[email_usuario])
-        msg.body = f"Hola {nombre}, tu código de verificación para Arcade es: {codigo}"
+        msg = Message('Tu Código Arcade', sender=app.config['MAIL_USERNAME'], recipients=[email_u])
+        msg.body = f"Tu código de verificación es: {codigo}"
         mail.send(msg)
         return jsonify({"status": "ok"}), 200
     except Exception as e:
-        print(f"Error en Gmail: {e}")
-        return jsonify({"status": "error", "message": "Error al enviar correo"}), 500
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/confirmar-registro', methods=['POST'])
 def confirmar_registro():
     datos = request.json
     email = datos.get('email')
-    codigo_usuario = datos.get('codigo')
-
-    if email in registros_pendientes and registros_pendientes[email]['codigo'] == codigo_usuario:
-        user_data = registros_pendientes[email]
+    if email in registros_pendientes and registros_pendientes[email]['codigo'] == datos.get('codigo'):
+        user = registros_pendientes[email]
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         try:
             cursor.execute('INSERT INTO usuarios (nombre, email, password) VALUES (?, ?, ?)', 
-                           (user_data['nombre'], email, user_data['password']))
+                           (user['nombre'], email, user['password']))
             conn.commit()
-            del registros_pendientes[email]
             return jsonify({"status": "ok"}), 201
         except:
-            return jsonify({"status": "error", "message": "Email ya registrado"}), 400
+            return jsonify({"status": "error", "message": "Ya existe"}), 400
         finally:
             conn.close()
-    return jsonify({"status": "error", "message": "Código incorrecto"}), 401
+    return jsonify({"status": "error"}), 401
 
 @app.route('/login-directo', methods=['POST'])
 def login_directo():
@@ -115,10 +94,8 @@ def login_directo():
                    (datos.get('email'), datos.get('password')))
     user = cursor.fetchone()
     conn.close()
-    if user:
-        return jsonify({"status": "ok", "nombre": user[0]}), 200
-    return jsonify({"status": "error", "message": "Credenciales incorrectas"}), 401
+    if user: return jsonify({"status": "ok", "nombre": user[0]}), 200
+    return jsonify({"status": "error"}), 401
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
