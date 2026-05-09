@@ -3,6 +3,7 @@
 <head>
     <script src="datos.js"></script>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Arcade - Dashboard</title>
     <style>
         :root { --neon: #00ffcc; --bg: #0d0d0d; }
@@ -53,7 +54,6 @@
 
         .spinner { border: 4px solid rgba(255,255,255,0.1); border-left-color: var(--neon); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { to { transform: rotate(360deg); } }
-
         .hidden { display: none !important; }
     </style>
 </head>
@@ -62,14 +62,14 @@
     <header>
         <h2 style="color: var(--neon); margin: 0;">ARCADE</h2>
         <div>
-            <span id="user-name" style="margin-right: 15px; font-weight: bold;"></span>
+            <span id="user-display" style="margin-right: 15px; font-weight: bold;"></span>
             <button class="btn-logout" onclick="cerrarSesion()">CERRAR SESIÓN</button>
         </div>
     </header>
 
     <section class="planes-section">
         <div class="gaymer-badge" onclick="togglePlanes()">
-            <img src="/imagenes/image.png" alt="Icono Gaymer" class="badge-icon">
+            <img src="imagenes/image.png" alt="Icono Gaymer" class="badge-icon">
             <span>¡HAZTE GAYMER!</span>
         </div>
 
@@ -78,7 +78,7 @@
                 <h3>ESENCIAL</h3>
                 <p class="precio">$20 <span>/mes</span></p>
                 <ul>
-                    <li>Acceso a 5 juegos</li>
+                    <li>Acceso a 15 juegos</li>
                     <li>Soporte básico</li>
                 </ul>
                 <button class="btn-plan" onclick="abrirPago('ESENCIAL', 20)">Elegir</button>
@@ -98,8 +98,8 @@
                 <h3>GAYMER</h3>
                 <p class="precio">$150 <span>/mes</span></p>
                 <ul>
-                    <li>Acceso TOTAL</li>
-                    <li>Nuevos lanzamientos</li>
+                    <li>Acceso a 30 juegos</li>
+                    <li>Catálogo Completo</li>
                     <li>Acceso a ROMs retro</li>
                 </ul>
                 <button class="btn-plan" onclick="abrirPago('GAYMER', 150)">Elegir</button>
@@ -118,7 +118,6 @@
 
     <div id="grid" class="grid"></div>
 
-    <!-- Modal de Pago Simulado -->
     <div id="modal-pago" class="modal-pago hidden">
         <div class="modal-content">
             <span class="close" onclick="cerrarPago()">&times;</span>
@@ -127,7 +126,7 @@
             
             <div id="form-pago">
                 <input type="text" id="card-name" placeholder="Nombre en la tarjeta">
-                <input type="text" id="card-num" placeholder="Número de tarjeta (16 dígitos)" maxlength="16">
+                <input type="text" id="card-num" placeholder="Número de tarjeta" maxlength="16">
                 <div style="display: flex; gap: 10px;">
                     <input type="text" placeholder="MM/AA" maxlength="5" style="width: 50%;">
                     <input type="password" placeholder="CVV" maxlength="3" style="width: 50%;">
@@ -143,20 +142,22 @@
     </div>
 
     <script>
+        // Al cargar la página
         window.onload = () => {
             const user = localStorage.getItem('usuario'); 
+            const planActivo = localStorage.getItem('plan_gaymer');
+
             if (!user) {
                 window.location.href = 'login.html';
             } else {
-                document.getElementById('user-name').innerText = user.toUpperCase();
-                if (typeof listaDeJuegos !== 'undefined') render(listaDeJuegos);
+                // Actualiza el nombre de usuario con el plan al lado
+                const etiquetaPlan = planActivo ? ` | PLAN: ${planActivo}` : " | PLAN: GRATUITO"; 
+                document.getElementById('user-display').innerText = user.toUpperCase() + etiquetaPlan; 
+
+                // Llamamos a filtrar 'todos' para que cargue la lista inicial según el plan
+                filtrar('todos');
             }
         };
-
-        function cerrarSesion() {
-            localStorage.removeItem('usuario');
-            window.location.href = 'login.html';
-        }
 
         function render(lista) {
             const container = document.getElementById('grid');
@@ -172,21 +173,37 @@
         }
 
         function filtrar(c) {
-            const f = c === 'todos' ? listaDeJuegos : listaDeJuegos.filter(j => j.consola === c);
+            const planActivo = localStorage.getItem('plan_gaymer');
+            let baseLista = [];
+
+            // LÓGICA DE LÍMITES SOLICITADA POR AIORIA:
+            // Gratuito: 10 | Esencial: 15 | Pro: 20 | Gaymer: 30
+            if (planActivo === 'ESENCIAL') {
+                baseLista = listaDeJuegos.slice(0, 15);
+            } else if (planActivo === 'PRO') {
+                baseLista = listaDeJuegos.slice(0, 20);
+            } else if (planActivo === 'GAYMER') {
+                baseLista = listaDeJuegos.slice(0, 30);
+            } else {
+                baseLista = listaDeJuegos.slice(0, 10); // Caso por defecto/Gratis
+            }
+
+            const f = c === 'todos' ? baseLista : baseLista.filter(j => j.consola === c);
             render(f);
         }
 
-        function instalar(url) {
-            window.location.href = url; 
+        function cerrarSesion() {
+            localStorage.removeItem('usuario');
+            localStorage.removeItem('plan_gaymer');
+            window.location.href = 'login.html';
         }
 
         function togglePlanes() {
             document.getElementById('contenedor-planes').classList.toggle('hidden');
         }
 
-        // Lógica de Pago
         function abrirPago(plan, precio) {
-            document.getElementById('plan-seleccionado').innerText = `PLAN ${plan} - $${precio}.00 MXN`;
+            document.getElementById('plan-seleccionado').innerText = `PLAN SELECCIONADO: ${plan}`;
             document.getElementById('modal-pago').classList.remove('hidden');
         }
 
@@ -199,9 +216,11 @@
         function validarPago() {
             const nombre = document.getElementById('card-name').value;
             const numero = document.getElementById('card-num').value;
+            // Obtenemos el nombre del plan desde el texto del modal
+            const planNombre = document.getElementById('plan-seleccionado').innerText.split(': ')[1];
 
             if (nombre.length < 3 || numero.length < 16) {
-                alert("Por favor, ingresa datos válidos para continuar.");
+                alert("Por favor, ingresa datos válidos.");
                 return;
             }
 
@@ -209,11 +228,13 @@
             document.getElementById('loading-pago').classList.remove('hidden');
 
             setTimeout(() => {
-                alert("¡PAGO PROCESADO CON ÉXITO! \n\nGracias por ser parte de la comunidad Gaymer. Se han desbloqueado nuevos títulos en tu biblioteca.");
-                cerrarPago();
+                localStorage.setItem('plan_gaymer', planNombre); 
+                alert(`¡PAGO PROCESADO! Bienvenido al nivel ${planNombre}`);
                 location.reload(); 
             }, 3000);
         }
+
+        function instalar(url) { window.location.href = url; }
     </script>
 </body>
 </html>
